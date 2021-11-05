@@ -39,10 +39,11 @@ This means your project repository is currently out of date (regardless if the f
 Just ensure multiple people ***ARE NOT*** working on the *same* file.
 
 ### git checkout -b ***branchName***
-To alleviate issues with merging on the same project, new branches can be developed which essentially makes a "copy" of the original branch. Therefore changes can be made on the same files without needing to merge.
+To alleviate issues with merging on the same project, new branches can be developed which essentially makes a "copy" of the original branch. Therefore, changes can be made on the same project without needing to merge.
 
-Merging will only occur when commiting to the main branch, i.e.,
+Merging will only occur when commiting to the main branch; i.e., when merging "test" branch back to the "main" branch
  ```
- git checkout master
- git merge ***branchName***
+ git checkout main
+ git merge test
+ git push
  ```

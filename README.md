@@ -14,9 +14,9 @@ Below is a set of commands to use for pushing and pulling from the git repositor
 ### git add ***filename.extention***
 Will stage files, i.e., get them ready to commit
  > Bash commands can be used, i.e., to stage all changed files
-'''
+```
 git add *
-'''
+```
 
 ### git commit -m "***commitMessage***"
 Will update the local repository with the files you listed in your "git add"
@@ -42,7 +42,7 @@ Just ensure multiple people ***ARE NOT*** working on the *same* file.
 To alleviate issues with merging on the same project, new branches can be developed which essentially makes a "copy" of the original branch. Therefore changes can be made on the same files without needing to merge.
 
 Merging will only occur when commiting to the main branch, i.e.,
- '''
+ ```
  git checkout master
  git merge ***branchName***
- '''
+ ```

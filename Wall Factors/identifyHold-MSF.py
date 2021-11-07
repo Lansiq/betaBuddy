@@ -1,10 +1,14 @@
 ## Mean Shift Filtering; overlay of result of Canny edge detection
-import util
+import util as U
 
-testImg = util.inputImage("IMG_6354.JPEG")
+testImg = U.inputImage("IMG_6354.JPEG")
 
-printImage(testImg)
+#U.printImage(testImg)
 
-plotImage(testImg)
+U.plotImage(testImg)
 
-saveImage("test",testImg)
+testImg = U.Gray(testImg)
+
+U.plotImage(testImg)
+
+U.saveImage(testImg)

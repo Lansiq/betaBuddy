@@ -12,14 +12,19 @@ Can use command prompt as well, see commands below:
 Below is a set of commands to use for pushing and pulling from the git repository. Please read and ask me if you need clarification on what each does.
 
 ## git clone ***repositoryURL***
-Run this command in the folder in your folder of choice via terminal or Github App , this is where your local repository will be located.
+Run this command in your folder of choice via terminal or Github App , this is where your local repository will be located.
 
 ## git add ***filename.extention***
 Will stage files, i.e., get them ready to commit
- > Bash commands can be used, i.e., to stage all changed files
+ > Bash commands can be used, i.e., 
+ > to stage all changed files
 ```
 git add *
 ```
+ > to stage all python (.py) files
+ ```
+ git add *.py
+ ```
 
 ## git commit -m "***commitMessage***"
 Will update the local repository with the files you listed in your "git add"

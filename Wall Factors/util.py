@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # bool color = [0] for grayscale image
 #       = [1] for color image
 def inputImage(fileName,colour = 1):
-    return cv2.imread(fileName,colour)
+    return cv2.imread("testWalls/"+fileName,colour)
 
 ## Displays image in seperate window
 # cv2 img = cv2 object of image
@@ -22,7 +22,7 @@ def plotImage(img):
 # string fileName = name of jpg to save
 # cv2 img = cv2 object of image
 def saveImage(img,fileName = "Output"):
-    cv2.imwrite("output/"+fileName+".jpg",img)  
+    cv2.imwrite("Output/"+fileName+".jpg",img)  
     
 #Apply A Guassian Blur to the Input Picture
 #Kernal Size is the size of the Kernal that is used to find the average pixel

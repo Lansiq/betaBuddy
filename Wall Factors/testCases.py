@@ -64,20 +64,30 @@ def gBlur(img,num):
 def edgeDetect(imgArray,suffixArray,msfSize,gBlurSize,num):    
     # Perform on all varrying parameter images
     for i in range(len(imgArray)):
+        Picture = imgArray[i]
+        
         # Convert to greyscale
-        grayImage = U.Gray(imgArray[i])
-        U.saveImage(grayImage, "edgeDetect/wall"+num+"/"+suffixArray[i])
+        Picture_Gray = U.Gray(Picture)
 
         # Threshold/Mask
+        T,Threshold_Adaptive = U.Threshold(Picture_Gray)
+        Mask_Adaptive = U.Mask(Picture,Threshold_Adaptive)
         
-
-        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
-        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
+        U.saveImage(Mask_Adaptive,"edgeDetect/mask/Wall"+str(num)+"/"+suffixArray[i])
 
         # Canny
-        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
+        Canny = U.Canny(Picture_Gray,T/2,T)
 
         # Contour
-        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
-        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
-                    
+        Contours_Outline = Wall.Find_Contours_Optimal(Canny,Picture,False)
+
+        U.saveImage(Contours_Outline,"edgeDetect/contour/Wall"+str(num)+"/"+suffixArray[i])
+
+
+        # Centroid
+        Contours_Filled_Binary = U.Find_Contours_Optimal_Binary(Canny,Picture)
+        Canny = U.Canny(Contours_Filled_Binary,T/2,T)
+        Contours_Filled_Moment = U.Find_Contours_Optimal_Moment(Canny,Picture)
+        
+        U.saveImage(Contours_Filled_Moment,"edgeDetect/moment/Wall"+str(num)+"/"+suffixArray[i])
+

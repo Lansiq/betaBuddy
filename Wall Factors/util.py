@@ -37,6 +37,86 @@ def RGB (Image):
     return RGB_Image
 
 #Converts Image to Black and White
-def Gray (Image):
-    Gray_Image = cv2.cvtColor(Image, cv2.COLOR_BGR2GRAY)
+#Assumes Image is BGR unless Specified
+def Gray (Image, BGR = True):
+    if BGR:
+        Gray_Image = cv2.cvtColor(Image, cv2.COLOR_BGR2GRAY)
+    else:
+        Gray_Image = cv2.cvtColor(Image, cv2.COLOR_RGB2GRAY)
+        
     return Gray_Image
+
+#Performs Thresholding
+#Threshold is the Miniumum intensity that a pixel must. If < they will be black
+#Output_Pixel is the Pixel value that will be assigned to pixels > Threshold
+def Threshold_Basic (Image,Threshold,Output_Pixel=255):
+    T_Value,Threshold_Image = cv2.threshold (Image,Threshold,Output_Pixel,cv2.THRESH_BINARY_INV)
+    return Threshold_Image
+
+def Threshold (Image,Output_Pixel=255):
+    T_Value,Threshold_Image = cv2.threshold (Image,0,Output_Pixel,cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    return T,Threshold_Image
+
+def Mask (Input_Image, Mask):
+    Masked_Image = cv2.bitwise_and(Input_Image,Input_Image,mask = Mask)
+    return Masked_Image
+
+def Canny (Image,Low_Threshold,High_Threshold):
+    Canny_Image = cv2.Canny(Image,Low_Threshold,High_Threshold)
+    return Canny_Image
+
+def Find_Contours (Image,Target_Image):
+    Contours, Heirarchy = cv2.findContours(Image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    cv2.drawContours(Target_Image,Contours,-1,(224,245,66),2)
+       
+    return Target_Image
+
+def Find_Contours_Optimal (Image,Target_Image,Filled = True):
+    Contours, Heirarchy = cv2.findContours(Image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+       
+    Hulls = map(cv2.convexHull,Contours)
+    Hulls = list(Hulls)
+    
+    if Filled:
+        cv2.drawContours(Target_Image,Hulls,-1,(224,245,66),-1)
+    else:
+        cv2.drawContours(Target_Image,Hulls,-1,(224,245,66),2)
+                
+    return Target_Image
+
+def Find_Contours_Optimal_Binary (Image,Target_Image,Filled = True):
+    Contours, Heirarchy = cv2.findContours(Image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+       
+    Hulls = map(cv2.convexHull,Contours)
+    Hulls = list(Hulls)
+    
+    Mask = np.zeros(Target_Image.shape,np.uint8)
+    
+    if Filled:
+        cv2.drawContours(Mask,Hulls,-1,(255,255,255),-1)
+    else:
+        cv2.drawContours(Mask,Hulls,-1,(255,255,255),2)
+                
+    return Mask
+
+def Find_Contours_Optimal_Moment (Image,Target_Image,Filled = True):
+    Contours, Heirarchy = cv2.findContours(Image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+       
+    Hulls = map(cv2.convexHull,Contours)
+    Hulls = list(Hulls)
+    
+    if Filled:
+        cv2.drawContours(Target_Image,Hulls,-1,(224,245,66),-1)
+    else:
+        cv2.drawContours(Target_Image,Hulls,-1,(224,245,66),2)
+        
+    for H in Hulls:
+        M = cv2.moments(H)
+        
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        
+        cv2.circle(Target_Image, (cX, cY), 5, (0, 0, 255), -1)
+        
+    return Target_Image

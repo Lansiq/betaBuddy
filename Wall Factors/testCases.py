@@ -66,18 +66,18 @@ def edgeDetect(imgArray,suffixArray,msfSize,gBlurSize,num):
     for i in range(len(imgArray)):
         # Convert to greyscale
         grayImage = U.Gray(imgArray[i])
-        U.saveImage(grayImage, "edgeDetect/gray/wall"+num+suffixArray[i])
+        U.saveImage(grayImage, "edgeDetect/wall"+num+"/"+suffixArray[i])
 
         # Threshold/Mask
         
 
-        U.saveImage(, "edgeDetect/threshold/wall"+num+suffixArray[i])
-        U.saveImage(, "edgeDetect/mask/wall"+num+suffixArray[i])
+        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
+        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
 
         # Canny
-        U.saveImage(, "edgeDetect/canny/wall"+num+suffixArray[i])
+        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
 
         # Contour
-        U.saveImage(, "edgeDetect/contour/wall"+num+suffixArray[i])
-        U.saveImage(, "edgeDetect//wall"+num+suffixArray[i])
+        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
+        U.saveImage(, "edgeDetect/wall"+num+"/"+suffixArray[i])
                     

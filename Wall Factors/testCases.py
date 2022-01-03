@@ -90,7 +90,7 @@ def edgeDetect(imgArray,suffixArray,msfSize,gBlurSize,num):
         # Centroid
         Contours_Filled_Binary = U.Find_Contours_Optimal_Binary(Canny,Picture)
         Canny = U.Canny(Contours_Filled_Binary,T/2,T)
-        Contours_Filled_Moment = U.Find_Contours_Optimal_Moment(Canny,Picture)
+        Contours_Filled_Moment, Coordinates = U.Find_Contours_Optimal_Moment(Canny,Picture)
         
         U.saveImage(Contours_Filled_Moment,"edgeDetect/moment/Wall"+str(num)+"/"+suffixArray[i])
 

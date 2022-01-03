@@ -1,6 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.cluster import KMeans
 
 ## Opens image from "Climbing Photos" folder
 # string filePath = location of image to open
@@ -112,6 +113,7 @@ def Find_Contours_Optimal_Moment (Image,Target_Image,Filled = True):
     else:
         cv2.drawContours(Target_Image,Hulls,-1,(224,245,66),2)
         
+    Centr = []
     for H in Hulls:
         M = cv2.moments(H)
         
@@ -120,5 +122,15 @@ def Find_Contours_Optimal_Moment (Image,Target_Image,Filled = True):
             cY = int(M["m01"] / M["m00"])
         
             cv2.circle(Target_Image, (cX, cY), 5, (0, 0, 255), -1)
-        
-    return Target_Image
+            Centr.append([cX, cY])
+
+    
+    Coords = kMeansCluster(Centr, 8) # Update for user input of number of holds
+    
+    return Target_Image, Coords
+
+def kMeansCluster(Centroids, holdNum):
+    X = np.array(Centroids)
+    kmeans = KMeans(n_clusters=holdNum, random_state=0).fit(X)
+
+    return kmeans.cluster_centers_

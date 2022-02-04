@@ -3,7 +3,7 @@ import util as U
 import cv2
 
 for k in range(1,8):
-    println("Testing Wall",k,":")
+    print("Testing Wall",k,":")
     
     testImg = U.inputImage("Wall"+str(k)+".JPEG")
 

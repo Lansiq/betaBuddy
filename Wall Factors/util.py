@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 
-## Opens image from "Climbing Photos" folder
+## Opens image from "testWalls" folder
 # string filePath = location of image to open
 # bool color = [0] for grayscale image
 #       = [1] for color image
@@ -121,16 +121,37 @@ def Find_Contours_Optimal_Moment (Image,Target_Image,Filled = True):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
         
-            cv2.circle(Target_Image, (cX, cY), 5, (0, 0, 255), -1)
+            #Uncomment to show pre-clustering centroids
+            #cv2.circle(Target_Image, (cX, cY), 5, (0, 0, 255), -1)
+
             Centr.append([cX, cY])
 
-    
-    Coords = kMeansCluster(Centr, 8) # Update for user input of number of holds
+    Coords = kMeansCluster(Centr)
+
+    for C in Coords:
+        cv2.circle(Target_Image, (C[0], C[1]), 5, (0, 0, 255), -1)
     
     return Target_Image, Coords
 
-def kMeansCluster(Centroids, holdNum):
+# Clustering algorithm to eliminate repeated coordinates within the same hold
+# int Centroids = calculated centroid coordinates (x,y pairs) from contours
+# int holdNum = number of holds for wall, will aim to isolate only that many coordinate pairs
+def kMeansCluster(Centroids, holdNum = 15):     # update to ask for user input for number of holds
     X = np.array(Centroids)
     kmeans = KMeans(n_clusters=holdNum, random_state=0).fit(X)
 
-    return kmeans.cluster_centers_
+    return np.int_(kmeans.cluster_centers_)
+
+# Rescales pixels value of hold coordinates into distance from floor to use for beta algorithm
+# int coords = 2D array holding x,y pairs of coordinates for holds
+# cv2 img = image of wall
+# float scale = x pixel/meters
+def scaleCoords(coords, img, scale = None):
+
+    if scale == None:
+        height, width, channel = img.shape
+        scale = height/8                        # Assumes 8 meter wall, 
+    
+    coordsDist =[[j/scale for j in i] for i in coords] # Distance from ground
+
+    return coordsDist

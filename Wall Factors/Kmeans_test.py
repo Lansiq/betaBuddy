@@ -19,3 +19,6 @@ kmeans.predict([[0, 0], [12, 3]])
 ## Cluster centers (coordinates to pass to path finding algorithm)
 kmeans.cluster_centers_
 #Output: array([[10.,  2.],[ 1.,  2.]])
+
+test = np.int_(kmeans.cluster_centers_)
+print(test, type(test))

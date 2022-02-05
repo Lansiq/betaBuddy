@@ -1,0 +1,126 @@
+GridLayout:
+    cols: 1
+    ScreenManager:
+        id: screen_manager
+        StartScreen: 
+            name: "start_screen"
+            id: start_screen
+        CameraScreen:
+            name: "camera_screen"
+            id: camera_screen
+        HoldsScreen:
+            name: "holds_screen"
+            id: holds_screen
+        BetaScreen:
+            name: "beta_screen"
+            id: beta_screen
+
+<Button>
+    size_hint: (0.7, 0.05)
+
+<StartScreen>:
+    FloatLayout: 
+        Image:
+            id: welcome_image
+            source: 'assets/welcome.png'
+            allow_stretch: True
+        Label:
+            text: "Welcome to BetaBuddy"
+            font_size: '20sp'
+        Button:
+            text: "Capture Wall"
+            pos_hint: {"x": 0.15, "top": 0.1}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = "camera_screen"
+
+<CameraScreen>:
+    orientation: 'vertical'
+    FloatLayout:
+        Camera:
+            id: camera
+            resolution: (480, 640)
+            play: False
+        ToggleButton:
+            text: 'Toggle Camera Preview'
+            on_press: camera.play = not camera.play
+            pos_hint: {"x": 0.15, "top": 0.15 }
+        Button:
+            text: 'Capture Wall'
+            pos_hint: {"x": 0.15, "top": 0.1 }
+            on_press:
+                root.capture()
+        Button:
+            text: 'Analyze'
+            pos_hint: {"x": 0.15, "top": 0.05 }
+            on_press:
+                # root refers to <CameraScreen>
+                # app refers to TestCamera, app.root refers to the GridLayout: at the top
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = 'holds_screen'
+
+<HoldsScreen>:
+    FloatLayout:
+        Image:
+            id: wall
+            source: "wall.png"
+            allow_stretch: False
+            keep_ratio: True
+            
+        ToggleButton:
+            id: toggle_delete      
+            text: "Delete"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.4, "top": 1}
+            on_press:
+                root.toggle_delete()
+        Button:
+            id: btn
+            text: "Continue to Find Beta"
+            pos_hint: {"x": 0.15, "top": 0.1}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = "beta_screen"
+        Button:
+            id: btn
+            text: "Take another photo"
+            pos_hint: {"x": 0.15, "top": 0.05}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'right'
+                app.root.ids['screen_manager'].current = "camera_screen"
+        
+    
+<BetaScreen>:
+    FloatLayout: 
+        Label:
+            text: "Beta Analysis"
+        ToggleButton:
+            id: toggle_start
+            text: "Start"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.2, "top": 1}
+            on_press:
+                root.toggle_start()
+        ToggleButton:
+            id: toggle_stop      
+            text: "Stop"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.4, "top": 1}
+            on_press:
+                root.toggle_stop()
+        Button:        
+            text: "Reset"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.6, "top": 1}
+            on_press:
+                root.reset()
+
+        Button:
+            text: "Step-by-Step Instructions"
+            pos_hint: {"x": 0.15, "top": 0.1}
+        Button:
+            text: "Capture Another Wall"
+            pos_hint: {"x": 0.15, "top": 0.05}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'right'
+                app.root.ids['screen_manager'].current = "camera_screen"

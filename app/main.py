@@ -16,23 +16,62 @@ class StartScreen(Screen):
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-
-    #Delete Flag
-    delete = False
-
     points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
 
     def __init__(self, **kwargs):
         super(HoldsScreen, self).__init__(**kwargs)
+        #Dictionary pairing points with canvas object
+        self.holds = {}
+        #Coordinates for Start and Stop holds
+        self.start = None
+        self.stop = None
+        self.startHold = None
+        self.stopHold = None
+
+         #Delete Flag
+        self.delete = False
+        self.add = False
+
+        #Flags for buttons are toggled
+        self.startFlag = False
+        self.stopFlag = False
+
+        #with self.canvas.before:
+            #self.rect = Rectangle(source="WALL.png")
         self.draw_points()
 
+    """ def on_pos(self, *args):
+        # update Rectangle position when BetaScreen position changes
+        self.rect.pos = self.pos
+
+    def on_size(self, *args):
+        # update Rectangle size when BetaScreen size changes
+        self.rect.size = self.size """
+
+    #Draw points on screen
     def draw_points(self):
-        #Draw points on screen
         with self.canvas:
-            self.canvas.clear()
             for point in self.points:
-                Color(1.0, 0, 0)
-                Line(circle=(point[0],point[1],5))
+                Color(1.0, 0.0, 0.0)
+                self.holds[point] = Line(circle=(point[0],point[1],5))
+            
+            if self.start != None:
+                self.canvas.add(self.startHold)
+
+            if self.stop != None:
+                self.canvas.add(self.stopHold)
+
+    #Clear all holds from canvas
+    def clear_canvas(self):
+        for hold in self.holds.values():
+            self.canvas.remove(hold)
+        self.holds = {}
+
+    #Remove point/hold from Canvas, dictionary, and list of points
+    def removeHold(self, point):
+        self.canvas.remove(self.holds.get(point))
+        del self.holds[point]
+        self.points.remove(point)
 
     #Calculate distance between two points
     def distance(self, p1, p2):
@@ -54,52 +93,6 @@ class HoldsScreen(Screen):
                 closest_p = point
         return closest_p
 
-    #Toggle Delete
-    def toggle_delete(self):
-        self.delete = not self.delete
-        print("Toggled Delete")
-
-    #Delete and select route functions
-    def on_touch_down(self, touch):
-        input = touch.pos
-        print(input)
-
-        select = self.closest(input, self.points)
-
-        #Delete toggled, delete point and redraw
-        if self.delete and (select != None):
-            self.points.remove(select)
-            self.draw_points()
-
-        #Overwrite method by returning the method of the super class
-        return super(HoldsScreen, self).on_touch_down(touch)
-
-class BetaScreen(Screen):
-    #Threshold for distance calculation between touch input and hold coordinates
-    threshold = 50
-
-    #Flags for buttons are toggled
-    startFlag = False
-    stopFlag = False
-
-    #Coordinates for Start and Stop holds
-    start = None
-    stop = None
-
-    #Points for Holds
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
-    
-    def __init__(self, **kwargs):
-        super(BetaScreen, self).__init__(**kwargs)
-        self.draw_points()
-
-    def draw_points(self):
-        #Draw points on screen
-        with self.canvas:
-            for point in self.points:
-                Color(1.0, 0, 0)
-                Line(circle=(point[0],point[1],5))
-    
     #Toggling the start flag on button toggle
     def toggle_start(self):
         self.startFlag = not self.startFlag
@@ -110,6 +103,114 @@ class BetaScreen(Screen):
         self.stopFlag = not self.stopFlag
         print("Toggled Stop", self.stopFlag)
 
+    #Toggle Delete
+    def toggle_delete(self):
+        self.delete = not self.delete
+        print("Toggled Delete", self.delete)
+
+    #Toggle Add
+    def toggle_add(self):
+        self.add = not self.add
+        print("Toggled Add", self.add)
+    
+    #Reset all hold points and start/stop selection
+    def reset(self):
+        self.clear_canvas()
+        self.draw_points()
+        self.start = None
+        self.stop = None
+
+    #Delete and select route functions
+    def on_touch_down(self, touch):
+        input = touch.pos
+        print(input[0], input[1])
+
+        select = self.closest(input, self.points)
+
+        #Delete button toggled, delete point and redraw
+        if self.delete and (select != None):
+            self.removeHold(select)
+            self.delete = False
+            self.manager.get_screen("holds_screen").ids.delete_toggle.state = "normal"
+
+        #Print Start and Stop Flag
+        print(self.startFlag, self.stopFlag)
+
+        #Selecting start and stop points
+        if (self.startFlag == True and self.stopFlag == False):
+            #Select start as point closest to selection within threshold
+            self.start = self.closest(input, self.points)
+            print("Selected start:", self.start)
+            
+            #Change colour of start hold
+            if self.start != None:
+                with self.canvas:
+                    Color(0, 1.0, 0)
+                    self.startHold = Line(circle=(self.start[0],self.start[1],5))
+                
+                #Reset Toggle
+                self.startFlag = False
+                self.manager.get_screen("holds_screen").ids.start_toggle.state = "normal"
+            
+        elif (self.startFlag == False and self.stopFlag == True):
+            self.stop = self.closest(input, self.points)
+            print("Selected stop:", self.stop)
+            
+            #Change colour of stop hold
+            if self.stop != None:
+                with self.canvas:
+                    Color(0, 0.0, 1.0)
+                    self.holds[input] = Line(circle=(self.stop[0],self.stop[1],5))
+                
+                #Reset Toggle
+                self.stopFlag = False
+                self.manager.get_screen("holds_screen").ids.stop_toggle.state = "normal"
+                
+
+        #Adding hold based on user input
+        if self.add:
+            self.points.append(input)
+            print(self.points)
+            with self.canvas:
+                Color(1.0, 0.0, 0.0)
+                self.holds[input] = Line(circle=(input[0],input[1],5))
+            
+            #Reset toggle
+            self.add = False
+            self.manager.get_screen("holds_screen").ids.add_toggle.state = "normal"
+
+        #Overwrite method by returning the method of the super class
+        return super(HoldsScreen, self).on_touch_down(touch)
+
+class BetaScreen(Screen):
+    #Threshold for distance calculation between touch input and hold coordinates
+    threshold = 50
+
+    #Points for Holds
+    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
+    
+    def __init__(self, **kwargs):
+        super(BetaScreen, self).__init__(**kwargs)
+        #Add background image of wall
+        with self.canvas.before:
+            self.rect = Rectangle(source="WALL.png")
+        self.draw_points()
+
+    def on_pos(self, *args):
+        # update Rectangle position when BetaScreen position changes
+        self.rect.pos = self.pos
+
+    def on_size(self, *args):
+        # update Rectangle size when BetaScreen size changes
+        self.rect.size = self.size
+
+    def draw_points(self):
+        with self.canvas:
+            #Draw points on screen
+            for point in self.points:
+                Color(1.0, 0.0, 0.0)
+                Line(circle=(point[0],point[1],5))
+    
     #Calculate distance between two points
     def distance(self, p1, p2):
         dist = 0
@@ -135,38 +236,7 @@ class BetaScreen(Screen):
         #Get touch coordinates as tuple
         input = touch.pos
         print(input)
-
-        #Print Start and Stop Flag
-        print(self.startFlag, self.stopFlag)
-
-        #Selecting start and stop points
-        if (self.startFlag == True and self.stopFlag == False):
-            self.start = self.closest(input, self.points)
-            print("Selected start:", self.start)
-            
-            #Change colour of start hold
-            if self.start != None:
-                with self.canvas:
-                    Color(0, 1.0, 0)
-                    Line(circle=(self.start[0],self.start[1],5))
-            
-        elif (self.startFlag == False and self.stopFlag == True):
-            self.stop = self.closest(input, self.points)
-            print("Selected stop:", self.stop)
-            
-            #Change colour of stop hold
-            if self.stop != None:
-                with self.canvas:
-                    Color(0, 1.0, 0)
-                    Line(circle=(self.stop[0],self.stop[1],5))
-            
         return super(BetaScreen, self).on_touch_down(touch)
-
-    #Reset all hold points and start/stop selection
-    def reset(self):
-        self.draw_points()
-        self.start = None
-        self.stop = None
 
 class CameraScreen(Screen):
     def capture(self):

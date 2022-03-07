@@ -30,7 +30,99 @@ holdsList1 = [[70,770],[225,650],[150,580],[175,450],[290,480],[310,410],[225,37
 holdsList11 = [[175,450],[290,480],[310,410],[225,375],[210,350],[275,275],[300,225],[275,190]]
 holdsList2 = [[210,720],[300,720],[180,620],[80,550],[300,500],[190,490],[120,370],[75,320],[190,300],[100,220],[120,120]]
 
-
+class Body:
+    def __init__(self, rax, ray, lax, lay, rlx, rly, llx, lly,bx,by):
+        
+        self.bx = bx
+        self.by = by
+        self.rax = rax
+        self.ray = ray
+        self.lax = lax
+        self.lay = lay
+        self.rlx = rlx
+        self.rly = rly
+        self.llx = llx
+        self.lly = lly
+        
+        self.arm_weight = 1/16
+        self.leg_weight = 3/16
+        self.body_weight = 1/2
+        
+        self.cm_x = None
+        self.cm_y = None
+        
+        self.body_centre_x = None
+        self.body_centre_y = None
+        
+        self.armR_centre_x = None
+        self.armR_centre_y = None
+        
+        self.armL_centre_x = None
+        self.armL_centre_y = None
+        
+        self.legR_centre_x = None
+        self.legR_centre_y = None
+        
+        self.legL_centre_x = None
+        self.legL_centre_y = None
+        
+        self.scale = 200
+        
+        self.max_arm_length = 0.7525*self.scale
+        self.max_leg_length = 0.8775*self.scale
+        self.body_width = 0.3913*self.scale
+        self.body_length = 0.51*self.scale
+        self.density = 0.5*self.scale
+        
+    def get_midpoint(self, x1,x2,y1,y2):
+        Mx = (x1 + x2)/2
+        My = (y1 + y2)/2
+        
+        return Mx, My
+        
+    def make_centres(self):
+        self.body_centre_x = self.bx + self.body_width/2
+        self.body_centre_y = self.by + self.body_length/2
+        
+        self.armR_centre_x, self.armR_centre_y = self.get_midpoint(self.rax, self.bx + self.body_width, self.ray, self.by) 
+        
+        self.armL_centre_x, self.armL_centre_y = self.get_midpoint(self.lax,self.bx,self.lay,self.by) 
+        
+        self.legR_centre_x, self.legR_centre_y = self.get_midpoint(self.rlx,self.bx+self.body_width,self.rly,self.by+self.body_length) 
+        
+        self.legL_centre_x, self.legL_centre_y = self.get_midpoint(self.llx,self.bx,self.lly,self.by+self.body_length) 
+    
+    def centre_mass(self):
+#        self.cm_x = self.body_weight*self.body_centre_x + self.arm_weight*(self.armR_centre_x + self.armL_centre_x) + self.leg_weight*(self.legR_centre_x + self.legL_centre_x)           
+#        self.cm_y = self.body_weight*self.body_centre_y + self.arm_weight*(self.armR_centre_y + self.armL_centre_y) + self.leg_weight*(self.legR_centre_y + self.legL_centre_y)           
+        
+        self.cm_x = self.body_weight*self.body_centre_x + self.arm_weight*(self.rax + self.lax) + self.leg_weight*(self.rlx + self.llx)           
+        self.cm_y = self.body_weight*self.body_centre_y + self.arm_weight*(self.ray + self.lay) + self.leg_weight*(self.rly + self.lly)
+        
+    def get_cm(self):
+        return self.cm_x, self.cm_y
+    
+    def draw_right_arm(self, window):
+        pygame.draw.line(window, BLACK, (self.rax, self.ray), (self.bx+self.body_width, self.by),3)
+        
+    def draw_left_arm(self, window):
+        pygame.draw.line(window, BLACK, (self.lax, self.lay), (self.bx, self.by),3)
+        
+    def draw_right_leg(self, window):
+        pygame.draw.line(window, BLACK, (self.rlx, self.rly), (self.bx+self.body_width, self.by+self.body_length),3)
+    
+    def draw_left_leg(self, window):
+        pygame.draw.line(window, BLACK, (self.llx, self.lly), (self.bx, self.by+self.body_length),3)
+        
+    def draw_body(self, window):
+        pygame.draw.line(window, BLACK, (self.bx, self.by), (self.bx+self.body_width, self.by),3)        
+        pygame.draw.rect(window, BLACK, (self.bx,self.by,self.body_width,self.body_length), 3)
+        
+    def draw_whole_body(self, window):
+        self.draw_right_arm(window); self.draw_left_arm(window); self.draw_right_leg(window); self.draw_left_leg(window); self.draw_body(window)
+        
+    def draw_cm(self,window):
+        pygame.draw.circle(window, RED,(self.cm_x, self.cm_y), 5)
 
 # Define class Hold
 class Hold:
@@ -355,15 +447,95 @@ def get_feet(hand_paths, start_foot_left, start_foot_right):
                 count +=1
         
     return left_foot_path, right_foot_path
-        
-#    left_foot_path = {1: start_foot_left}
-#    right_foot_path = {1: start_foot_right}
-#    
-#    foot_paths = [left_foot_path, right_foot_path]
-    
-    pass
-    
 
+##############################################################################    
+####################### Main to test Beta Stuff ##############################
+##############################################################################
+#def main():
+#    # Screen Setup
+#    (width, height) = (400, 780)
+#    screen = pygame.display.set_mode((width, height))
+#    pygame.display.set_caption('Simple Path')
+#    screen.fill(WHITE)
+#    pygame.display.flip()
+#    
+#    # Take hold cooridantes and make them into Hold Class objects
+#    ############# Can change holds list used in this line #################
+#    classHoldsList = make_holds(holdsList1)
+#    
+#    # Set start and end holds
+#    start = classHoldsList[3]
+#    start.make_start()
+#    
+#    
+#    left_foot = classHoldsList[0]
+#    right_foot = classHoldsList[1]
+#    
+#    print(start.get_position())
+#    print(classHoldsList[2].get_position())
+#    print(left_foot.get_position())
+#    print(right_foot.get_position())
+#    
+#    classHoldsList[13].update_feet(classHoldsList)
+#    
+#    classHoldsList[8].twohands = True
+#    
+#    end = classHoldsList[-1]
+#    end.make_end()
+#    
+#    # Get neighbours for each hold
+#    update_neighbours_feet(classHoldsList)
+#    
+#    # Find paths
+#    hand_paths, foot_paths = find_paths(start, start, left_foot, right_foot, end, classHoldsList)
+##    print(paths)
+#    print(list(hand_paths[0]))
+#    print(list(hand_paths[1]))
+#    
+#    
+#    left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
+#    
+#    print(left_feet)
+#    print(right_feet)
+#    
+#    feet_paths = [left_feet,right_feet]
+#    
+#    pygame.init() # intilize font
+#    font=pygame.font.SysFont('helvetica',20) #define the font and size
+#    
+##    printHoldNumber(screen,hand_paths[0],font)
+##    printHoldNumber(screen,hand_paths[1],font)
+#    
+#    printHoldNumber(screen,feet_paths[0],font)
+#    printHoldNumber(screen,feet_paths[1],font)
+#    
+##    for i in paths[1].holds:
+##        i.make_neighbor()
+#    
+#    # Use a loop so the window stays open
+#    # But this means that pygame is always redrawing
+#    running = True
+#    while running:
+#        # If the X button is clicked quit pygame screen
+#        for event in pygame.event.get():
+#            if event.type == pygame.QUIT:
+#                running = False
+#        
+#        # Draw holds on screen
+#        drawHolds(screen,classHoldsList)
+#        
+#        #Draw Paths
+#        colours = [PURPLE, GREY]
+##        draw_paths(colours,hand_paths,screen)
+#        draw_paths(colours,feet_paths,screen)
+#    
+#    
+#    pygame.quit()
+    
+############################################################################
+####################### Main to test CM Stuff ##############################
+############################################################################
+    
 def main():
     # Screen Setup
     (width, height) = (400, 780)
@@ -372,58 +544,22 @@ def main():
     screen.fill(WHITE)
     pygame.display.flip()
     
-    # Take hold cooridantes and make them into Hold Class objects
-    ############# Can change holds list used in this line #################
-    classHoldsList = make_holds(holdsList1)
-    
-    # Set start and end holds
-    start = classHoldsList[3]
-    start.make_start()
-    
-    
-    left_foot = classHoldsList[0]
-    right_foot = classHoldsList[1]
-    
-    print(start.get_position())
-    print(classHoldsList[2].get_position())
-    print(left_foot.get_position())
-    print(right_foot.get_position())
-    
-    classHoldsList[13].update_feet(classHoldsList)
-    
-    classHoldsList[8].twohands = True
-    
-    end = classHoldsList[-1]
-    end.make_end()
-    
-    # Get neighbours for each hold
-    update_neighbours_feet(classHoldsList)
-    
-    # Find paths
-    hand_paths, foot_paths = find_paths(start, start, left_foot, right_foot, end, classHoldsList)
-#    print(paths)
-    print(list(hand_paths[0]))
-    print(list(hand_paths[1]))
-    
-    
-    left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
-    
-    print(left_feet)
-    print(right_feet)
-    
-    feet_paths = [left_feet,right_feet]
-    
     pygame.init() # intilize font
     font=pygame.font.SysFont('helvetica',20) #define the font and size
     
-#    printHoldNumber(screen,hand_paths[0],font)
-#    printHoldNumber(screen,hand_paths[1],font)
+    rax = 325
+    ray = 275
+    lax = 275
+    lay = 275
+    rlx = 325
+    rly = 500
+    llx = 275
+    lly = 500
+    bx = 160
+    by = 300
     
-    printHoldNumber(screen,feet_paths[0],font)
-    printHoldNumber(screen,feet_paths[1],font)
     
-#    for i in paths[1].holds:
-#        i.make_neighbor()
+    body = Body(rax, ray, lax, lay, rlx, rly, llx, lly,bx,by)
     
     # Use a loop so the window stays open
     # But this means that pygame is always redrawing
@@ -435,12 +571,19 @@ def main():
                 running = False
         
         # Draw holds on screen
-        drawHolds(screen,classHoldsList)
+#        drawHolds(screen,classHoldsList)
+        
+        body.draw_whole_body(screen)
+        body.make_centres()
+        body.centre_mass()
+        body.draw_cm(screen)
+        pygame.display.update()
+        
         
         #Draw Paths
         colours = [PURPLE, GREY]
 #        draw_paths(colours,hand_paths,screen)
-        draw_paths(colours,feet_paths,screen)
+#        draw_paths(colours,feet_paths,screen)
     
     
     pygame.quit()

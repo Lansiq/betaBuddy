@@ -4,6 +4,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.config import Config
 from kivy.graphics import *
 
+import WallFactors.util as wallUtil
+
 import time
 import math
 
@@ -16,7 +18,12 @@ class StartScreen(Screen):
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
+    #points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
+
+    # Generate points from photo and convert coordinates to tuple pair
+    img = wallUtil.testImage()
+    points = wallUtil.photoToCoords(img)
+    points = list(map(tuple, points))
 
     def __init__(self, **kwargs):
         super(HoldsScreen, self).__init__(**kwargs)
@@ -37,7 +44,8 @@ class HoldsScreen(Screen):
         self.stopFlag = False
 
         #with self.canvas.before:
-            #self.rect = Rectangle(source="WALL.png")
+        #    self.rect = Rectangle(source="WallFactors/testWalls/Walls.JPEG")
+
         self.draw_points()
 
     """ def on_pos(self, *args):
@@ -193,7 +201,8 @@ class BetaScreen(Screen):
         super(BetaScreen, self).__init__(**kwargs)
         #Add background image of wall
         with self.canvas.before:
-            self.rect = Rectangle(source="WALL.png")
+            #self.rect = Rectangle(source="WALL.png")
+            self.rect = Rectangle(source="WallFactors/testWalls/Wall.JPEG")
         self.draw_points()
 
     def on_pos(self, *args):
@@ -241,7 +250,7 @@ class BetaScreen(Screen):
 class CameraScreen(Screen):
     def capture(self):
         camera = self.ids['camera']
-        camera.export_to_png("WALL.png")
+        camera.export_to_png("app/WallFactors/testWalls/WALL.png")
 
 #Load GUI defined by kv file
 GUI = Builder.load_file("main.kv")

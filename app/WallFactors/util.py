@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 
+def testImage():
+    return cv2.imread(r"/Users/lancesiquioco/Documents/McMaster/ELECENG-V/Fall-2021/ELECENG4OI6/betaBuddy/app/WallFactors/testWalls/Wall.JPEG",1)
+
 ## Opens image from "testWalls" folder
 # string filePath = location of image to open
 # bool color = [0] for grayscale image
@@ -156,12 +159,26 @@ def scaleCoords(coords, img, scale = None):
 
     return coordsDist
 
+def flipCoords(coords,img):
+    height, width, channel = img.shape
+    yOff = 0
+    xOff = 0
+
+    coordsFlip = coords
+    print(len(coordsFlip))
+    for i in range(len(coordsFlip)):
+        coordsFlip[i,0] = coordsFlip[i,0] + xOff
+        coordsFlip[i,1] = height - coordsFlip[i,1] + yOff
+
+    return coordsFlip
+
+
 def photoToCoords(testImg):
     # Preprocessing - Gaussian Blur 
     GBlur = Blur(testImg, 15) # Change kernal size (2nd input) for more blur
        
     # Convert to greyscale
-    Picture_Gray = Gray(testImg)
+    Picture_Gray = Gray(GBlur)
 
     # Threshold/Mask
     T,Threshold_Adaptive = Threshold(Picture_Gray)
@@ -171,18 +188,18 @@ def photoToCoords(testImg):
     #U.printImage(Mask_Adaptive)
         
     # Canny
-    Canny = Canny(Picture_Gray,T/2,T)
+    Canny_Img = Canny(Picture_Gray,T/2,T)
 
     # Contour
-    Contours_Outline = Find_Contours_Optimal(Canny,testImg,False)
+    Contours_Outline = Find_Contours_Optimal(Canny_Img,testImg,False)
 
     #Uncomment if you want to see image
     #U.printImage(Contours_Outline)
 
     # Centroid
-    Contours_Filled_Binary = Find_Contours_Optimal_Binary(Canny,testImg)
-    Canny = Canny(Contours_Filled_Binary,T/2,T)
-    Contours_Filled_Moment, coords = Find_Contours_Optimal_Moment(Canny,testImg)
+    Contours_Filled_Binary = Find_Contours_Optimal_Binary(Canny_Img,testImg)
+    Canny_Img = Canny(Contours_Filled_Binary,T/2,T)
+    Contours_Filled_Moment, coords = Find_Contours_Optimal_Moment(Canny_Img,testImg)
 
     #Uncomment if you want to see image
     #U.printImage(Contours_Filled_Moment)
@@ -190,4 +207,4 @@ def photoToCoords(testImg):
     # Scaling
     holdDist = scaleCoords(coords,testImg)
         
-    return coords
+    return flipCoords(coords,testImg)

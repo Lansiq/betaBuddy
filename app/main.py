@@ -8,12 +8,36 @@ import WallFactors.util as wallUtil
 
 import time
 import math
+import os
 
 Config.set('graphics', 'width', '480')
 Config.set('graphics', 'height', '640')
 
 class StartScreen(Screen):
     pass
+
+#Camera screen for capturing wall
+class CameraScreen(Screen):
+    def capture(self):
+        camera = self.ids['camera']
+        camera.export_to_png("WALL.png")
+
+#Wall gallery 
+class GalleryScreen(Screen):
+    def __init__(self, **kwargs):
+        super(GalleryScreen, self).__init__(**kwargs)
+
+    #Set the default path for the gallery
+    def get_default_path(self):
+        self.path = os.getcwd()
+        return self.path
+
+    #Selecting images
+    def selected(self, filename):
+        try:    
+            self.ids.my_image.source = filename[0]
+        except:
+            pass
 
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
@@ -43,18 +67,23 @@ class HoldsScreen(Screen):
         self.startFlag = False
         self.stopFlag = False
 
+<<<<<<< HEAD
         #with self.canvas.before:
         #    self.rect = Rectangle(source="WallFactors/testWalls/Walls.JPEG")
 
+=======
+        with self.canvas.before:
+            self.rect = Rectangle(source="wall9.jpeg")
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
         self.draw_points()
 
-    """ def on_pos(self, *args):
+    def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
         self.rect.pos = self.pos
 
     def on_size(self, *args):
         # update Rectangle size when BetaScreen size changes
-        self.rect.size = self.size """
+        self.rect.size = self.size
 
     #Draw points on screen
     def draw_points(self):
@@ -201,8 +230,12 @@ class BetaScreen(Screen):
         super(BetaScreen, self).__init__(**kwargs)
         #Add background image of wall
         with self.canvas.before:
+<<<<<<< HEAD
             #self.rect = Rectangle(source="WALL.png")
             self.rect = Rectangle(source="WallFactors/testWalls/Wall.JPEG")
+=======
+            self.rect = Rectangle(source="WALL.PNG")
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
         self.draw_points()
 
     def on_pos(self, *args):
@@ -247,10 +280,31 @@ class BetaScreen(Screen):
         print(input)
         return super(BetaScreen, self).on_touch_down(touch)
 
+<<<<<<< HEAD
 class CameraScreen(Screen):
     def capture(self):
         camera = self.ids['camera']
         camera.export_to_png("app/WallFactors/testWalls/WALL.png")
+=======
+#Screen for instructions
+class StepsScreen(Screen):
+    def __init__(self, **kwargs):
+        self.stepNum = 1
+        super(StepsScreen, self).__init__(**kwargs)
+    
+    #display next/previous step and description
+    def update(self, n):
+        #Update step number
+        if n == 1:
+            self.stepNum = self.stepNum + 1
+        elif n == -1 and self.stepNum > 1:
+            self.stepNum = self.stepNum - 1
+
+        #Update figure and description for step
+        self.ids.my_image.source = "WALL" + str(self.stepNum) + ".png"
+        self.ids.instructions.text = "Step" + str(self.stepNum)
+
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
 
 #Load GUI defined by kv file
 GUI = Builder.load_file("main.kv")

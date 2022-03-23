@@ -8,12 +8,18 @@ GridLayout:
         CameraScreen:
             name: "camera_screen"
             id: camera_screen
+        GalleryScreen:
+            name: "gallery_screen"
+            id: gallery_screen
         HoldsScreen:
             name: "holds_screen"
             id: holds_screen
         BetaScreen:
             name: "beta_screen"
             id: beta_screen
+        StepsScreen:
+            name: "steps_screen"
+            id: steps_screen
 
 <Button>
     size_hint: (0.7, 0.05)
@@ -32,10 +38,16 @@ GridLayout:
             font_size: '20sp'
         Button:
             text: "Capture Wall"
-            pos_hint: {"x": 0.15, "top": 0.1}
+            pos_hint: {"x": 0.15, "top": 0.15}
             on_press:
                 app.root.ids['screen_manager'].transition.direction = 'left'
                 app.root.ids['screen_manager'].current = "camera_screen"
+        Button:
+            text: "Choose from Photos"
+            pos_hint: {"x": 0.15, "top": 0.1}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = "gallery_screen"
 
 <CameraScreen>:
     orientation: 'vertical'
@@ -48,20 +60,45 @@ GridLayout:
             text: 'Toggle Camera Preview'
             on_press: camera.play = not camera.play
             size_hint: (0.7, 0.05)
-            pos_hint: {"x": 0.15, "top": 0.15 }
+            pos_hint: {"x": 0.15, "top": 0.20 }
         Button:
             text: 'Capture Wall'
-            pos_hint: {"x": 0.15, "top": 0.1 }
+            pos_hint: {"x": 0.15, "top": 0.15 }
             on_press:
                 root.capture()
         Button:
             text: 'Analyze'
-            pos_hint: {"x": 0.15, "top": 0.05 }
+            pos_hint: {"x": 0.15, "top": 0.10 }
             on_press:
                 # root refers to <CameraScreen>
                 # app refers to captureWallApp, app.root refers to the GridLayout: at the top
                 app.root.ids['screen_manager'].transition.direction = 'left'
                 app.root.ids['screen_manager'].current = 'holds_screen'
+
+<GalleryScreen>:
+    FloatLayout:
+        Image:
+            id: my_image
+            source: ""
+            size_hint: (0.8, 0.5)
+            pos_hint: {"x": 0.1, "top": 0.95}
+        FileChooserIconView:
+            id: filechooser
+            dirselect: True
+            path:
+                root.get_default_path()
+            size_hint: (0.8, 0.2)
+            pos_hint: {"x": 0.1, "top": 0.4}
+            on_selection: 
+                root.selected(filechooser.selection)
+        Button:
+            id: btn
+            text: "Continue to Find Beta"
+            pos_hint: {"x": 0.15, "top": 0.1}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = "holds_screen"
+            
 
 <HoldsScreen>:
     FloatLayout:
@@ -98,14 +135,14 @@ GridLayout:
         Button:
             id: btn
             text: "Continue to Find Beta"
-            pos_hint: {"x": 0.15, "top": 0.1}
+            pos_hint: {"x": 0.15, "top": 0.15}
             on_press:
                 app.root.ids['screen_manager'].transition.direction = 'left'
                 app.root.ids['screen_manager'].current = "beta_screen"
         Button:
             id: btn
             text: "Take another photo"
-            pos_hint: {"x": 0.15, "top": 0.05}
+            pos_hint: {"x": 0.15, "top": 0.10}
             on_press:
                 app.root.ids['screen_manager'].transition.direction = 'right'
                 app.root.ids['screen_manager'].current = "camera_screen"
@@ -117,10 +154,36 @@ GridLayout:
             color: 1,0,0,1
         Button:
             text: "Step-by-Step Instructions"
-            pos_hint: {"x": 0.15, "top": 0.1}
+            pos_hint: {"x": 0.15, "top": 0.15}
+            on_press:
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = "steps_screen"
+
         Button:
             text: "Capture Another Wall"
-            pos_hint: {"x": 0.15, "top": 0.05}
+            pos_hint: {"x": 0.15, "top": 0.10}
             on_press:
                 app.root.ids['screen_manager'].transition.direction = 'right'
                 app.root.ids['screen_manager'].current = "camera_screen"
+
+<StepsScreen>:
+    FloatLayout:
+        Image: 
+            id: my_image
+            source: ""
+        Label:
+            id: instructions
+            text: "Step by Step Instructions"
+            color: 1,0,0,1
+        Button:
+            text: "Next Step"
+            size_hint: (0.3, 0.05)
+            pos_hint: {"x": 0.5, "top": 0.1}
+            on_press:
+                root.update(1)
+        Button:
+            text: "Previous Step"
+            size_hint: (0.3, 0.05)
+            pos_hint: {"x": 0.2, "top": 0.1}
+            on_press:
+                root.update(-1)

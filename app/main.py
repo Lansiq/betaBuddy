@@ -3,16 +3,51 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.config import Config
 from kivy.graphics import *
+from kivy.properties import StringProperty
+from kivy.storage.jsonstore import JsonStore
 
 import time
 import math
 import os
 
+store = JsonStore('settings.json')
+
 Config.set('graphics', 'width', '480')
 Config.set('graphics', 'height', '640')
 
+class WindowManager(ScreenManager):
+    image_source = StringProperty()
+
+    def selected(self, filename):
+        try:
+            self.image_source = filename[0]
+        except:
+            pass
+    
+#Start Up Screen
 class StartScreen(Screen):
     pass
+
+#User Settings Screen
+class SettingsScreen(Screen):
+    def __init__(self, **kwargs):
+        super(SettingsScreen, self).__init__(**kwargs)
+
+    #If settings exist before, use previous entered values
+    def on_enter(self):
+        if store.exists('settings'):
+            self.height = store.get('settings')['ht']
+            self.weight = store.get('settings')['wt']
+
+            self.manager.get_screen("settings_screen").ids.height.text = str(self.height)
+            self.manager.get_screen("settings_screen").ids.weight.text = str(self.weight)
+
+    #Save settings locally
+    def save(self):
+        height = self.ids.height.text
+        weight = self.ids.weight.text
+        
+        store.put('settings', ht = height, wt = weight)
 
 #Camera screen for capturing wall
 class CameraScreen(Screen):
@@ -29,13 +64,6 @@ class GalleryScreen(Screen):
     def get_default_path(self):
         self.path = os.getcwd()
         return self.path
-
-    #Selecting images
-    def selected(self, filename):
-        try:    
-            self.ids.my_image.source = filename[0]
-        except:
-            pass
 
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
@@ -60,10 +88,15 @@ class HoldsScreen(Screen):
         self.startFlag = False
         self.stopFlag = False
 
-        with self.canvas.before:
-            self.rect = Rectangle(source="wall9.jpeg")
+        #wall = "WALL9.png"
+        
+        #with self.canvas.before:
+            #self.rect = Rectangle(source=wall)
+        
+    def on_enter(self):
         self.draw_points()
 
+    '''
     def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
         self.rect.pos = self.pos
@@ -71,7 +104,7 @@ class HoldsScreen(Screen):
     def on_size(self, *args):
         # update Rectangle size when BetaScreen size changes
         self.rect.size = self.size
-
+    '''
     #Draw points on screen
     def draw_points(self):
         with self.canvas:
@@ -215,11 +248,14 @@ class BetaScreen(Screen):
     
     def __init__(self, **kwargs):
         super(BetaScreen, self).__init__(**kwargs)
+        '''
         #Add background image of wall
         with self.canvas.before:
             self.rect = Rectangle(source="WALL.PNG")
+        '''
+    def on_enter(self):
         self.draw_points()
-
+    '''
     def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
         self.rect.pos = self.pos
@@ -227,6 +263,7 @@ class BetaScreen(Screen):
     def on_size(self, *args):
         # update Rectangle size when BetaScreen size changes
         self.rect.size = self.size
+    '''
 
     def draw_points(self):
         with self.canvas:
@@ -286,6 +323,11 @@ GUI = Builder.load_file("main.kv")
 
 class captureWallApp(App):
     def build(self):
+        '''
+        if platform == 'android':
+            from android.permissions import request_permissions, Permission
+                request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+        '''
         return GUI
 
 captureWallApp().run()

@@ -6,16 +6,31 @@ from kivy.graphics import *
 from kivy.properties import StringProperty
 from kivy.storage.jsonstore import JsonStore
 
-import WallFactors.util as wallUtil
-
 import time
 import math
-import os
+import os, sys
+
+'''
+betaFile = os.path.realpath(os.path.join(os.path.dirname(__file__),'..','Beta Code'))
+sys.path.insert(0, betaFile)
+import BetaBuddy_TwoPaths_cos as beta
+'''
+
+cvFile = os.path.realpath(os.path.join(os.path.dirname(__file__),'..','Wall Factors'))
+sys.path.insert(0, cvFile)
+import util as cv
+
 
 store = JsonStore('settings.json')
 
-Config.set('graphics', 'width', '480')
-Config.set('graphics', 'height', '640')
+appWidth = '480'
+appHeight = '640'
+
+Config.set('graphics', 'width', appWidth)
+Config.set('graphics', 'height', appHeight)
+
+
+
 
 class WindowManager(ScreenManager):
     image_source = StringProperty()
@@ -70,12 +85,6 @@ class GalleryScreen(Screen):
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-    #points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
-
-    # Generate points from photo and convert coordinates to tuple pair
-    img = wallUtil.testImage()
-    points = wallUtil.photoToCoords(img)
-    points = list(map(tuple, points))
 
     def __init__(self, **kwargs):
         super(HoldsScreen, self).__init__(**kwargs)
@@ -95,24 +104,24 @@ class HoldsScreen(Screen):
         self.startFlag = False
         self.stopFlag = False
 
-<<<<<<< HEAD
         #wall = "WALL9.png"
         
         #with self.canvas.before:
             #self.rect = Rectangle(source=wall)
         
     def on_enter(self):
-=======
-<<<<<<< HEAD
-        #with self.canvas.before:
-        #    self.rect = Rectangle(source="WallFactors/testWalls/Walls.JPEG")
+        
+        image = self.manager.get_screen("gallery_screen").ids.my_image.source
+        cvWall = cv.inputImageFile(image)
+        coordsList = cv.photoToAppCoords(cvWall, int(appHeight), int(appWidth))
+        self.points = list(map(tuple,coordsList))
+        
+        #Save original set of points
+        self.origPoints = self.points.copy()
 
-=======
-        with self.canvas.before:
-            self.rect = Rectangle(source="wall9.jpeg")
->>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
->>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
-        self.draw_points()
+        print(cvWall.shape)
+        
+        self.draw_points(self.points)
 
     '''
     def on_pos(self, *args):
@@ -124,9 +133,9 @@ class HoldsScreen(Screen):
         self.rect.size = self.size
     '''
     #Draw points on screen
-    def draw_points(self):
+    def draw_points(self, points):
         with self.canvas:
-            for point in self.points:
+            for point in points:
                 Color(1.0, 0.0, 0.0)
                 self.holds[point] = Line(circle=(point[0],point[1],5))
             
@@ -191,7 +200,7 @@ class HoldsScreen(Screen):
     #Reset all hold points and start/stop selection
     def reset(self):
         self.clear_canvas()
-        self.draw_points()
+        self.draw_points(self.origPoints)
         self.start = None
         self.stop = None
 
@@ -260,27 +269,18 @@ class HoldsScreen(Screen):
 class BetaScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-
-    #Points for Holds
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
     
     def __init__(self, **kwargs):
         super(BetaScreen, self).__init__(**kwargs)
         '''
         #Add background image of wall
         with self.canvas.before:
-<<<<<<< HEAD
-            #self.rect = Rectangle(source="WALL.png")
-            self.rect = Rectangle(source="WallFactors/testWalls/Wall.JPEG")
-=======
             self.rect = Rectangle(source="WALL.PNG")
-<<<<<<< HEAD
         '''
     def on_enter(self):
-=======
->>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
->>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
-        self.draw_points()
+        points = self.manager.get_screen('holds_screen').points
+
+        self.draw_points(points)
     '''
     def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
@@ -291,10 +291,10 @@ class BetaScreen(Screen):
         self.rect.size = self.size
     '''
 
-    def draw_points(self):
+    def draw_points(self, points):
         with self.canvas:
             #Draw points on screen
-            for point in self.points:
+            for point in points:
                 Color(1.0, 0.0, 0.0)
                 Line(circle=(point[0],point[1],5))
     
@@ -325,12 +325,6 @@ class BetaScreen(Screen):
         print(input)
         return super(BetaScreen, self).on_touch_down(touch)
 
-<<<<<<< HEAD
-class CameraScreen(Screen):
-    def capture(self):
-        camera = self.ids['camera']
-        camera.export_to_png("app/WallFactors/testWalls/WALL.png")
-=======
 #Screen for instructions
 class StepsScreen(Screen):
     def __init__(self, **kwargs):
@@ -349,7 +343,6 @@ class StepsScreen(Screen):
         self.ids.my_image.source = "WALL" + str(self.stepNum) + ".png"
         self.ids.instructions.text = "Step" + str(self.stepNum)
 
->>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
 
 #Load GUI defined by kv file
 GUI = Builder.load_file("main.kv")

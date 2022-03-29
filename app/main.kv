@@ -107,8 +107,14 @@ WindowManager:
             on_press:
                 # root refers to <CameraScreen>
                 # app refers to captureWallApp, app.root refers to the GridLayout: at the top
+<<<<<<< HEAD
                 app.root.transition.direction = 'left'
                 app.root.current = 'gallery_screen'
+=======
+                camera.play = False
+                app.root.ids['screen_manager'].transition.direction = 'left'
+                app.root.ids['screen_manager'].current = 'holds_screen'
+>>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
 
 <GalleryScreen>:
     FloatLayout:
@@ -137,8 +143,14 @@ WindowManager:
 <HoldsScreen>:
     FloatLayout:
         Image:
+<<<<<<< HEAD
             id: img
             source: root.manager.image_source
+=======
+            id: welcome_image
+            source: 'WallFactors/testWalls/Wall.JPEG'
+            allow_stretch: False
+>>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
         ToggleButton:
             id: start_toggle
             text: "Start"

@@ -6,6 +6,8 @@ from kivy.graphics import *
 from kivy.properties import StringProperty
 from kivy.storage.jsonstore import JsonStore
 
+import WallFactors.util as wallUtil
+
 import time
 import math
 import os
@@ -68,7 +70,12 @@ class GalleryScreen(Screen):
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
+    #points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
+
+    # Generate points from photo and convert coordinates to tuple pair
+    img = wallUtil.testImage()
+    points = wallUtil.photoToCoords(img)
+    points = list(map(tuple, points))
 
     def __init__(self, **kwargs):
         super(HoldsScreen, self).__init__(**kwargs)
@@ -88,12 +95,23 @@ class HoldsScreen(Screen):
         self.startFlag = False
         self.stopFlag = False
 
+<<<<<<< HEAD
         #wall = "WALL9.png"
         
         #with self.canvas.before:
             #self.rect = Rectangle(source=wall)
         
     def on_enter(self):
+=======
+<<<<<<< HEAD
+        #with self.canvas.before:
+        #    self.rect = Rectangle(source="WallFactors/testWalls/Walls.JPEG")
+
+=======
+        with self.canvas.before:
+            self.rect = Rectangle(source="wall9.jpeg")
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
+>>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
         self.draw_points()
 
     '''
@@ -251,9 +269,17 @@ class BetaScreen(Screen):
         '''
         #Add background image of wall
         with self.canvas.before:
+<<<<<<< HEAD
+            #self.rect = Rectangle(source="WALL.png")
+            self.rect = Rectangle(source="WallFactors/testWalls/Wall.JPEG")
+=======
             self.rect = Rectangle(source="WALL.PNG")
+<<<<<<< HEAD
         '''
     def on_enter(self):
+=======
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
+>>>>>>> a28ce7d09805751704b2dd5ef3fc69e9209a8d36
         self.draw_points()
     '''
     def on_pos(self, *args):
@@ -299,6 +325,12 @@ class BetaScreen(Screen):
         print(input)
         return super(BetaScreen, self).on_touch_down(touch)
 
+<<<<<<< HEAD
+class CameraScreen(Screen):
+    def capture(self):
+        camera = self.ids['camera']
+        camera.export_to_png("app/WallFactors/testWalls/WALL.png")
+=======
 #Screen for instructions
 class StepsScreen(Screen):
     def __init__(self, **kwargs):
@@ -317,6 +349,7 @@ class StepsScreen(Screen):
         self.ids.my_image.source = "WALL" + str(self.stepNum) + ".png"
         self.ids.instructions.text = "Step" + str(self.stepNum)
 
+>>>>>>> 0fe5a84f1ae5edc529d5cb0a11717308b197e05d
 
 #Load GUI defined by kv file
 GUI = Builder.load_file("main.kv")

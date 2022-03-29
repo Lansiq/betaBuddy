@@ -7,7 +7,7 @@ def main():
     ## Fix file path issue ##
     #wallNum = input("Please enter Wall Number: ")
     #testImg = U.inputImage("Wall"+str(wallNum)+".JPEG")
-    path = r"C:\Users\lance\Desktop\testWalls\Wall9.JPEG"
+    path = r"/Users/lancesiquioco/Documents/McMaster/ELECENG-V/Fall-2021/ELECENG4OI6/betaBuddy/Wall Factors/testWalls/Wall9.JPEG"
 
     testImg = cv2.imread(path)
     U.printImage(testImg)
@@ -19,7 +19,9 @@ def main():
     coordinates, scaled, outputImg = edgeDetect(GBlur)
 
     # Output Check
-    print(scaled)
+    print(coordinates)
+    print(type(coordinates))
+    print(type(coordinates[0]))
     U.printImage(outputImg)
     cv2.waitKey(0)
 

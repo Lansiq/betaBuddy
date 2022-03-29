@@ -210,10 +210,11 @@ WindowManager:
         Image: 
             id: my_image
             source: root.manager.image_source
-        Label:
+        Button:
             id: instructions
+            pos_hint: {"x": 0.15}
             text: "Step by Step Instructions"
-            color: 1,0,0,1
+            color: 0,1,0,1
         Button:
             text: "Next Step"
             size_hint: (0.3, 0.05)

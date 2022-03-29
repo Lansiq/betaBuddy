@@ -173,7 +173,7 @@ def flipCoords(coords, img):
 
     flip = coords
     for i in range(len(coords)):
-        flip[i,1] = height - coords[i,1]
+        flip[i][1] = height - coords[i][1]
 
     return flip
 
@@ -262,10 +262,10 @@ def photoToAppCoords(testImg, appHeight, appWidth):
 #Offsets the horizontal coordinates based on the application width
 
 def offsetCoords(coords, testImg, appWidth, appHeight):
-    offset = ( appWidth - (testImg.shape[1])*(appHeight/testImg.shape[0]) )/2.0
+    offset = ( appHeight - (testImg.shape[1])*(appWidth/testImg.shape[1]) )/2.0
 
     offsetCoords = coords
     for i in range(len(coords)):
-        offsetCoords[i][0] = coords[i][0] + offset
+        offsetCoords[i][1] = coords[i][1] + offset
 
     return offsetCoords

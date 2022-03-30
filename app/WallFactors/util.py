@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cluster import KMeans
 
+def testImage():
+    return cv2.imread(r"/Users/lancesiquioco/Documents/McMaster/ELECENG-V/Fall-2021/ELECENG4OI6/betaBuddy/app/WallFactors/testWalls/Wall.JPEG",1)
+
 ## Opens image from "testWalls" folder
 # string filePath = location of image to open
 # bool color = [0] for grayscale image
@@ -10,18 +13,10 @@ from sklearn.cluster import KMeans
 def inputImage(fileName,colour = 1):
     return cv2.imread("testWalls/"+fileName,colour)
 
-## Opens image from "fileName"
-# string filePath = ABSOLUTE filepath of image to open
-# bool color = [0] for grayscale image
-#       = [1] for color image
-def inputImageFile(fileName,colour = 1):
-    return cv2.imread(fileName,colour)
-
 ## Displays image in seperate window
 # cv2 img = cv2 object of image
 def printImage(img, Window_Name = "Output Window"):
     cv2.imshow(Window_Name, img)
-    cv2.waitKey(0)
 
 ## Plots image via MATLAB
 # cv2 img = cv2 object of image
@@ -164,61 +159,21 @@ def scaleCoords(coords, img, scale = None):
 
     return coordsDist
 
-## Flips pixels value of hold coordinates so origin goes from top left -> bottom left
-# int coords = 2D array holding x,y pairs of coordinates for holds
-# cv2 img = image of wall
-# float scale = x pixel/meters
-def flipCoords(coords, img):
+def flipCoords(coords,img):
     height, width, channel = img.shape
+    yOff = 0
+    xOff = 0
 
-    flip = coords
-    for i in range(len(coords)):
-        flip[i][1] = height - coords[i][1]
+    coordsFlip = coords
+    print(len(coordsFlip))
+    for i in range(len(coordsFlip)):
+        coordsFlip[i,0] = coordsFlip[i,0] + xOff
+        coordsFlip[i,1] = height - coordsFlip[i,1] + yOff
 
-    return flip
+    return coordsFlip
 
 
-## Takes an image and provides points of holds (units of distance), assumes origin is top left
-# cv2 testImg = image of wall
-def photoToDist(testImg):
-    # Preprocessing - Gaussian Blur 
-    GBlur = Blur(testImg, 15) # Change kernal size (2nd input) for more blur
-       
-    # Convert to greyscale
-    Picture_Gray = Gray(testImg)
-
-    # Threshold/Mask
-    T,Threshold_Adaptive = Threshold(Picture_Gray)
-    Mask_Adaptive = Mask(testImg,Threshold_Adaptive)
-
-    #Uncomment if you want to see image
-    #U.printImage(Mask_Adaptive)
-        
-    # Canny
-    Canny = Canny(Picture_Gray,T/2,T)
-
-    # Contour
-    Contours_Outline = Find_Contours_Optimal(Canny,testImg,False)
-
-    #Uncomment if you want to see image
-    #U.printImage(Contours_Outline)
-
-    # Centroid
-    Contours_Filled_Binary = Find_Contours_Optimal_Binary(Canny,testImg)
-    Canny = Canny(Contours_Filled_Binary,T/2,T)
-    Contours_Filled_Moment, coords = Find_Contours_Optimal_Moment(Canny,testImg)
-
-    #Uncomment if you want to see image
-    #U.printImage(Contours_Filled_Moment)
-
-    # Scaling
-    holdDist = scaleCoords(coords,testImg)
-        
-    return coords
-
-## Takes an image and provides points of holds (units of distance), assumes origin is top left
-# cv2 testImg = image of wall
-def photoToAppCoords(testImg, appHeight, appWidth):
+def photoToCoords(testImg):
     # Preprocessing - Gaussian Blur 
     GBlur = Blur(testImg, 15) # Change kernal size (2nd input) for more blur
        
@@ -230,42 +185,26 @@ def photoToAppCoords(testImg, appHeight, appWidth):
     Mask_Adaptive = Mask(testImg,Threshold_Adaptive)
 
     #Uncomment if you want to see image
-    #printImage(Mask_Adaptive)
+    #U.printImage(Mask_Adaptive)
         
     # Canny
-    CannyImg = Canny(Picture_Gray,T/2,T)
+    Canny_Img = Canny(Picture_Gray,T/2,T)
 
     # Contour
-    Contours_Outline = Find_Contours_Optimal(CannyImg,testImg,False)
+    Contours_Outline = Find_Contours_Optimal(Canny_Img,testImg,False)
 
     #Uncomment if you want to see image
-    #printImage(Contours_Outline)
+    #U.printImage(Contours_Outline)
 
     # Centroid
-    Contours_Filled_Binary = Find_Contours_Optimal_Binary(CannyImg,testImg)
-    CannyImg = Canny(Contours_Filled_Binary,T/2,T)
-    Contours_Filled_Moment, coords = Find_Contours_Optimal_Moment(CannyImg,testImg)
+    Contours_Filled_Binary = Find_Contours_Optimal_Binary(Canny_Img,testImg)
+    Canny_Img = Canny(Contours_Filled_Binary,T/2,T)
+    Contours_Filled_Moment, coords = Find_Contours_Optimal_Moment(Canny_Img,testImg)
 
     #Uncomment if you want to see image
-    #printImage(Contours_Filled_Moment)
+    #U.printImage(Contours_Filled_Moment)
 
-    #PUT INTO OWN FUNCTION
-    #=======================
     # Scaling
-    appCoords = flipCoords(coords,testImg)
-    print(appCoords)
-    appCoords = scaleCoords(appCoords, testImg, testImg.shape[0]/appHeight)
-    appCoords = offsetCoords(appCoords, testImg, appWidth, appHeight)
-    
-    return appCoords
-
-#Offsets the horizontal coordinates based on the application width
-
-def offsetCoords(coords, testImg, appWidth, appHeight):
-    offset = ( appHeight - (testImg.shape[1])*(appWidth/testImg.shape[1]) )/2.0
-
-    offsetCoords = coords
-    for i in range(len(coords)):
-        offsetCoords[i][1] = coords[i][1] + offset
-
-    return offsetCoords
+    holdDist = scaleCoords(coords,testImg)
+        
+    return flipCoords(coords,testImg)

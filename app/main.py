@@ -3,16 +3,67 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.config import Config
 from kivy.graphics import *
+from kivy.properties import StringProperty
+from kivy.storage.jsonstore import JsonStore
+from kivy.uix.label import Label
 
 import time
 import math
-import os
+import os, sys
 
-Config.set('graphics', 'width', '480')
-Config.set('graphics', 'height', '640')
+'''
+betaFile = os.path.realpath(os.path.join(os.path.dirname(__file__),'..','Beta Code'))
+sys.path.insert(0, betaFile)
+import BetaBuddy_TwoPaths_cos as beta
+'''
 
+cvFile = os.path.realpath(os.path.join(os.path.dirname(__file__),'..','Wall Factors'))
+sys.path.insert(0, cvFile)
+import util as cv
+
+
+store = JsonStore('settings.json')
+
+appWidth = 480
+appHeight = 640
+
+Config.set('graphics', 'width', str(appWidth))
+Config.set('graphics', 'height', str(appHeight))
+
+
+class WindowManager(ScreenManager):
+    image_source = StringProperty()
+
+    def selected(self, filename):
+        try:
+            self.image_source = filename[0]
+        except:
+            pass
+    
+#Start Up Screen
 class StartScreen(Screen):
     pass
+
+#User Settings Screen
+class SettingsScreen(Screen):
+    def __init__(self, **kwargs):
+        super(SettingsScreen, self).__init__(**kwargs)
+
+    #If settings exist before, use previous entered values
+    def on_enter(self):
+        if store.exists('settings'):
+            self.height = store.get('settings')['ht']
+            self.weight = store.get('settings')['wt']
+
+            self.manager.get_screen("settings_screen").ids.height.text = str(self.height)
+            self.manager.get_screen("settings_screen").ids.weight.text = str(self.weight)
+
+    #Save settings locally
+    def save(self):
+        height = self.ids.height.text
+        weight = self.ids.weight.text
+        
+        store.put('settings', ht = height, wt = weight)
 
 #Camera screen for capturing wall
 class CameraScreen(Screen):
@@ -30,17 +81,9 @@ class GalleryScreen(Screen):
         self.path = os.getcwd()
         return self.path
 
-    #Selecting images
-    def selected(self, filename):
-        try:    
-            self.ids.my_image.source = filename[0]
-        except:
-            pass
-
 class HoldsScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
 
     def __init__(self, **kwargs):
         super(HoldsScreen, self).__init__(**kwargs)
@@ -60,10 +103,32 @@ class HoldsScreen(Screen):
         self.startFlag = False
         self.stopFlag = False
 
-        with self.canvas.before:
-            self.rect = Rectangle(source="wall9.jpeg")
-        self.draw_points()
+        #wall = "WALL9.png"
+        
+        #with self.canvas.before:
+            #self.rect = Rectangle(source=wall)
+        
+    def on_enter(self):
+        
+        image = self.manager.get_screen("gallery_screen").ids.my_image.source
+        cvWall = cv.inputImageFile(image)
+        #coordsList = cv.photoToAppCoords(cvWall, appHeight, appWidth)
+        coordsList = [[334, 53], [383, 125], [333, 165], [269, 273], [304, 336], [264, 386], [187, 504], [219, 561], [333, 626], [129, 712], [295, 781], [130, 932], [212, 1055]]
 
+        coordsList = cv.flipCoords(coordsList, cvWall)
+        coordsList = cv.scaleCoords(coordsList, cvWall, cvWall.shape[1]/appWidth)
+        coordsList = cv.offsetCoords(coordsList, cvWall, appWidth, appHeight)
+
+        self.points = list(map(tuple,coordsList))
+        
+        #Save original set of points
+        self.origPoints = self.points.copy()
+
+        print(cvWall.shape)
+        
+        self.draw_points(self.points)
+
+    '''
     def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
         self.rect.pos = self.pos
@@ -71,11 +136,11 @@ class HoldsScreen(Screen):
     def on_size(self, *args):
         # update Rectangle size when BetaScreen size changes
         self.rect.size = self.size
-
+    '''
     #Draw points on screen
-    def draw_points(self):
+    def draw_points(self, points):
         with self.canvas:
-            for point in self.points:
+            for point in points:
                 Color(1.0, 0.0, 0.0)
                 self.holds[point] = Line(circle=(point[0],point[1],5))
             
@@ -140,7 +205,7 @@ class HoldsScreen(Screen):
     #Reset all hold points and start/stop selection
     def reset(self):
         self.clear_canvas()
-        self.draw_points()
+        self.draw_points(self.origPoints)
         self.start = None
         self.stop = None
 
@@ -209,17 +274,19 @@ class HoldsScreen(Screen):
 class BetaScreen(Screen):
     #Threshold for distance calculation between touch input and hold coordinates
     threshold = 50
-
-    #Points for Holds
-    points = [(160,293),(68,73),(22,10),(300, 400), (20, 500), (400, 150)]
     
     def __init__(self, **kwargs):
         super(BetaScreen, self).__init__(**kwargs)
+        '''
         #Add background image of wall
         with self.canvas.before:
             self.rect = Rectangle(source="WALL.PNG")
-        self.draw_points()
+        '''
+    def on_enter(self):
+        points = self.manager.get_screen('holds_screen').points
 
+        self.draw_points(points)
+    '''
     def on_pos(self, *args):
         # update Rectangle position when BetaScreen position changes
         self.rect.pos = self.pos
@@ -227,11 +294,12 @@ class BetaScreen(Screen):
     def on_size(self, *args):
         # update Rectangle size when BetaScreen size changes
         self.rect.size = self.size
+    '''
 
-    def draw_points(self):
+    def draw_points(self, points):
         with self.canvas:
             #Draw points on screen
-            for point in self.points:
+            for point in points:
                 Color(1.0, 0.0, 0.0)
                 Line(circle=(point[0],point[1],5))
     
@@ -265,9 +333,16 @@ class BetaScreen(Screen):
 #Screen for instructions
 class StepsScreen(Screen):
     def __init__(self, **kwargs):
-        self.stepNum = 1
+        self.stepNum = 0
         super(StepsScreen, self).__init__(**kwargs)
     
+    '''
+    def on_enter(self):
+        points = self.manager.get_screen('holds_screen').points
+
+        self.number_points(points)
+    '''
+
     #display next/previous step and description
     def update(self, n):
         #Update step number
@@ -278,14 +353,75 @@ class StepsScreen(Screen):
 
         #Update figure and description for step
         self.ids.my_image.source = "WALL" + str(self.stepNum) + ".png"
-        self.ids.instructions.text = "Step" + str(self.stepNum)
 
+        rightArm = {
+            '1' : '25',
+            '2' : '21',
+            '5' : '13',
+            '9' : '11',
+            '14' : '4',
+            '17' : '3'
+        }
+        leftArm = {
+            '1' : '25',
+            '3' :'19',
+            '6' : '13',
+            '10' : '11',
+            '11': '9',
+            '12' : '6',
+            '16' : '3'
+        }
+        rightFoot = {
+            '1' : '33',
+            '4' : '31',
+            '8' : '23',
+            '15' : '13'
+        }
+        leftFoot = {
+            '1' : '31',
+            '7' : '25',
+            '13' : '19'
+        }
+
+        self.moves(rightArm, leftArm, rightFoot, leftFoot)
+
+    def moves(self, rightArm, leftArm, rightFoot, leftFoot):
+        key = str(self.stepNum)
+
+        if key == '1':
+            self.ids.instructions.text = "Step 1: Get into starting position"
+        elif key in rightArm.keys():
+            self.ids.instructions.text = "Step " + key + ": Move Right Hand to Hold " + rightArm[key]
+        elif key in leftArm.keys():
+            self.ids.instructions.text = "Step " + key + ": Move Left Hand to Hold " + leftArm[key]
+        elif key in rightFoot.keys():
+            self.ids.instructions.text = "Step " + key + ": Move Right Foot to Hold " + rightFoot[key]
+        elif key in leftFoot.keys():
+            self.ids.instructions.text = "Step " + key + ": Move Left Foot to Hold " + leftFoot[key]
+        else:
+            print("Step not found")
+    
+    '''
+    def number_points(self, points):
+        num = 1
+        with self.canvas:
+            for point in points:
+                print(point)
+                Color(1.0, 0.0, 0.0)
+                #holdNum = Label(text = str(num), pos = point)
+                num = num + 1
+    '''
 
 #Load GUI defined by kv file
 GUI = Builder.load_file("main.kv")
 
 class captureWallApp(App):
     def build(self):
+        '''
+        if platform == 'android':
+            from android.permissions import request_permissions, Permission
+                request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+        '''
         return GUI
 
 captureWallApp().run()

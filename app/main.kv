@@ -82,7 +82,7 @@ WindowManager:
             pos_hint: {"x": 0.15, "top": 0.10}
             on_press:
                 app.root.transition.direction = 'right'
-                app.root.current = "start_screen"
+                app.root.current = 'start_screen'
 
 <CameraScreen>:
     orientation: 'vertical'
@@ -126,19 +126,75 @@ WindowManager:
             pos_hint: {"x": 0.1, "top": 0.4}
             on_selection: 
                 root.manager.selected(filechooser.selection)
+                continueBeta.disabled = False
         Button:
-            id: btn
+            id: continueBeta
             text: "Continue to Find Beta"
             pos_hint: {"x": 0.15, "top": 0.1}
+            disabled: True
             on_press:
                 app.root.transition.direction = 'left'
                 app.root.current = "holds_screen"
+        Button:
+            id: return
+            text: "Return to Main"
+            pos_hint: {"x": 0.15, "top": 0.05}
+            on_press:
+                app.root.transition.direction = 'right'
+                app.root.current = "start_screen"
             
 <HoldsScreen>:
     FloatLayout:
         Image:
             id: img
             source: root.manager.image_source
+        
+        ToggleButton:
+            text: "Select Route"
+            pos_hint: {"x": 0.2, "top": 1.0}
+            on_press:
+                root.toggle_select()
+        Button:        
+            text: "Reset"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.6, "top": 0.95}
+            on_press:
+                root.reset()
+        ToggleButton:
+            id: add_toggle
+            text: "Add"
+            pos_hint: {"x": 0.2, "top": 0.95}
+            on_press:
+                root.toggle_add() 
+        ToggleButton:
+            id: delete_toggle      
+            text: "Delete"
+            pos_hint: {"x": 0.4, "top": 0.95}
+            on_press:
+                root.toggle_delete()
+        Button:
+            id: advanceToBeta
+            text: "Continue to Find Beta"
+            pos_hint: {"x": 0.15, "top": 0.15}
+            on_press:
+                app.root.transition.direction = 'left'
+                app.root.current = "beta_screen"
+        Button:
+            id: backToCamera
+            text: "Take another photo"
+            pos_hint: {"x": 0.15, "top": 0.10}
+            on_press:
+                app.root.transition.direction = 'right'
+                app.root.current = "camera_screen"
+    
+<BetaScreen>:
+    FloatLayout: 
+        Image:
+            source: root.manager.image_source
+        Label:
+            text: "Beta Analysis"
+            color: 1,0,0,1
+
         ToggleButton:
             id: start_toggle
             text: "Start"
@@ -157,47 +213,12 @@ WindowManager:
             pos_hint: {"x": 0.6, "top": 1}
             on_press:
                 root.reset()
-        ToggleButton:
-            id: add_toggle
-            text: "Add"
-            pos_hint: {"x": 0.2, "top": 0.95}
-            on_press:
-                root.toggle_add() 
-        ToggleButton:
-            id: delete_toggle      
-            text: "Delete"
-            pos_hint: {"x": 0.4, "top": 0.95}
-            on_press:
-                root.toggle_delete()
-        Button:
-            id: btn
-            text: "Continue to Find Beta"
-            pos_hint: {"x": 0.15, "top": 0.15}
-            on_press:
-                app.root.transition.direction = 'left'
-                app.root.current = "beta_screen"
-        Button:
-            id: btn
-            text: "Take another photo"
-            pos_hint: {"x": 0.15, "top": 0.10}
-            on_press:
-                app.root.transition.direction = 'right'
-                app.root.current = "camera_screen"
-    
-<BetaScreen>:
-    FloatLayout: 
-        Image:
-            source: root.manager.image_source
-        Label:
-            text: "Beta Analysis"
-            color: 1,0,0,1
         Button:
             text: "Step-by-Step Instructions"
             pos_hint: {"x": 0.15, "top": 0.15}
             on_press:
                 app.root.transition.direction = 'left'
                 app.root.current = "steps_screen"
-
         Button:
             text: "Capture Another Wall"
             pos_hint: {"x": 0.15, "top": 0.10}

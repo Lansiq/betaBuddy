@@ -262,7 +262,7 @@ def photoToAppCoords(testImg, appHeight, appWidth):
 #Offsets the horizontal coordinates based on the application width
 
 def offsetCoords(coords, testImg, appWidth, appHeight):
-    offset = ( appHeight - (testImg.shape[1])*(appWidth/testImg.shape[1]) )/2.0
+    offset = (appHeight - (testImg.shape[0])*(appWidth/testImg.shape[1]) )/2.0
 
     offsetCoords = coords
     for i in range(len(coords)):

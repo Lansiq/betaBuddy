@@ -1,5 +1,7 @@
 from shapely.geometry import Point, Polygon
 import math
+import matplotlib.pyplot as plt
+
 
 # Dictionary for:
     # Segmental Mass / Total Mass
@@ -43,17 +45,27 @@ class Body:
         # Add starting holds as 4 distal endpoints
         #   Arbitrary center of torso (not necessarily COM of body) defined by centroid of distal points
         #   Proximal points defined from center +- offset from body width/length
-        arb = Polygon([[p.x, p.y] for p in [startLH, startRH, startLF, startRF,]])
+        arb = Polygon([[p[0], p[1]] for p in [startLH, startRH, startLF, startRF]])
         center = arb.centroid
 
+        print(self.shoulder_width,self.hip_width,self.body_length)
+
         #   Left Arm
-        self.addSegment("upperExtremity",center-self.shoulder_width/2, center+self.body_length/2, startLH.x, startLH.y)
+        self.addSegment("upperExtremity", \
+            (center.x-self.shoulder_width)/2, \
+            (center.y+self.body_length)/2, startLH[0], startLH[1])
         #  Right Arm
-        self.addSegment("upperExtremity",center+self.shoulder_width/2, center+self.body_length/2, startRH.x, startRH.y)
+        self.addSegment("upperExtremity", \
+            (center.x+self.shoulder_width)/2, (center.y+self.body_length)/2, \
+            startRH[0], startRH[1])
         #   Left Leg
-        self.addSegment("lowerExtremity",center-self.hip_width/2, center-self.body_length/2, startLF.x, startLF.y)
+        self.addSegment("lowerExtremity",\
+            (center.x-self.hip_width)/2, (center.y-self.body_length)/2, \
+            startLF[0], startLF[1])
         #   Right Leg
-        self.addSegment("lowerExtremity",center+self.hip_width/2, center-self.body_length/2, startRF.x, startRF.y)
+        self.addSegment("lowerExtremity",\
+            (center.x+self.hip_width)/2, (center.y-self.body_length)/2, \
+            startRF[0], startRF[1])
 
         self.torso = self.updateTorso()
 
@@ -68,9 +80,9 @@ class Body:
         bodyCOMy = 0
 
         for i in self.seg:
-            segCOM = i.centreOfMass
-            bodyCOMx = bodyCOMx + i.P*segCOM[0]
-            bodyCOMy = bodyCOMy + i.P*segCOM[1]
+            segCOM = i.centreOfMass()
+            bodyCOMx = bodyCOMx + i.P*segCOM.x
+            bodyCOMy = bodyCOMy + i.P*segCOM.y
         
         return Point(bodyCOMx, bodyCOMy)
 
@@ -85,7 +97,45 @@ class Body:
 
     # Checks if body's centre of mass is within torso
     def offBalance(self):
-        return self.fullBody_centreOfMass().within(self.torso)
+        return not (self.fullBody_centreOfMass().within(self.torso))
+
+    def drawBody(self):
+        plt.figure()
+
+        # Torso
+        xt = [ self.seg[0].proximal.x, self.seg[1].proximal.x, self.seg[3].proximal.x, self.seg[2].proximal.x ]
+        xt.append(xt[0])
+  
+        yt = [ self.seg[0].proximal.y, self.seg[1].proximal.y, self.seg[3].proximal.y, self.seg[2].proximal.y ]
+        yt.append(yt[0])
+
+        plt.plot(xt,yt) 
+
+        #Draw Limbs
+        RHx = [ self.seg[0].proximal.x,self.seg[0].distal.x ]
+        RHy = [ self.seg[0].proximal.y,self.seg[0].distal.y ]
+        plt.plot(RHx,RHy) 
+
+        LHx = [ self.seg[1].proximal.x,self.seg[1].distal.x ]
+        LHy = [ self.seg[1].proximal.y,self.seg[1].distal.y ]
+        plt.plot(LHx,LHy) 
+
+        RLx = [ self.seg[3].proximal.x,self.seg[3].distal.x ]
+        RLy = [ self.seg[3].proximal.y,self.seg[3].distal.y ]
+        plt.plot(RLx,RLy) 
+
+        LLx = [ self.seg[2].proximal.x,self.seg[2].distal.x ]
+        LLy = [ self.seg[2].proximal.y,self.seg[2].distal.y ]
+        plt.plot(LLx,LLy) 
+
+        # Full Body COM
+        COM = self.fullBody_centreOfMass()
+        plt.plot(COM.x, COM.y,'o')
+
+        # Plot
+        print(COM)
+        print(self.torso)
+        plt.show()  
 
     ## WIP ##
     ## Provide new coordinates and body will move while checking constraints of torso and max segment lengths
@@ -111,8 +161,8 @@ class segment:
     # Calculates centre of mass coordinates of segment
     # int[] COM = x-y pair of COM coordinate
     def centreOfMass(self):
-        COMx = self.proximal[0] + self.R*(self.distal[0]-self.proximal[0])
-        COMy = self.proximal[1] + self.R*(self.distal[1]-self.proximal[1])
+        COMx = self.proximal.x + self.R*(self.distal.x-self.proximal.x)
+        COMy = self.proximal.y + self.R*(self.distal.y-self.proximal.y)
 
         return Point(COMx,COMy)
     

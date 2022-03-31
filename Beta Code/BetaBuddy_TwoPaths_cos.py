@@ -12,6 +12,8 @@ pygame tutorial: https://www.youtube.com/watch?v=8dfePlONtls
 # Import needed libaries
 import pygame
 import math
+import util as U
+import cv2
 
 # Define different colours for convience
 RED = (255, 0, 0)
@@ -126,9 +128,10 @@ class Body:
 
 # Define class Hold
 class Hold:
-    def __init__(self,x,y):
+    def __init__(self,x,y,id):
         self.x = x
         self.y = y
+        self.id = id
         self.neighbors = []
         self.colour = RED
         self.close = []
@@ -138,6 +141,9 @@ class Hold:
     def get_position(self):
         return self.x, self.y
 
+    def get_id(self):
+        return self.id
+
     def is_start(self):
         return self.colour == GREEN
     
@@ -146,30 +152,40 @@ class Hold:
     
     def make_start(self):
         self.colour = GREEN
-    
+
+    def make_orange(self):
+        self.colour = ORANGE
+
     def make_end(self):
         self.colour = BLUE
         
-    def make_neighbor(self):
+    def make_neighbor_col(self):
         self.colour = TURQUOISE
         
     def update_parent(self, theparent):
         self.parent = theparent
     
     #Method to draw hold
-    def draw(self, window):
-        pygame.draw.circle(window, self.colour,(self.x, self.y), 5)
+    def draw(self, window, scale):
+        pygame.draw.circle(window, self.colour,(self.x*scale, self.y*scale), 5)
     
     def draw_edge(self, window, p):
         pygame.draw.line(window, ORANGE, (self.x, self.y), p.get_posistion())
     
-    def update_neighbors(self, holdsList):
+    def update_neighbors(self, holdsList, height):
         self.neighbors = []
         for hold in holdsList:
             if hold != self:
                 x,y = hold.get_position()
-                if abs(self.x - x) < 125 and abs(self.y - y) < 125 and (y - self.y) < 0:
+                dist = g(hold, self)
+                max = height*0.44 + 0.6096
+                # print("max ", max)
+                # print("dist ", dist)
+                if dist < max:
                     self.neighbors.append(hold)
+                    # hold.make_neighbor_col()
+                # if abs(self.x - x) < 1 and abs(self.y - y) < 2 and (y - self.y) < 0:
+                #     self.neighbors.append(hold)
                     #hold.make_neighbour()
     
     def update_feet(self, holdsList):
@@ -201,30 +217,32 @@ class Path:
     def __init__(self, start):
         self.holds = [start]
 
-
-# Functions for Beta Buddy #
-
+#####################################################################################################################
+############################################ Functions for Beta Buddy #############################################
+#####################################################################################################################
 
 # Takes a list of corridantes and makes them into hold objects
-def make_holds(hold_coords):
+def make_holds(hold_coords,hold_id):
     hold_list = []
-    for i in hold_coords:
-        newHold = Hold(i[0],i[1])
+    for i in range(len(hold_coords)):
+        newHold = Hold(hold_coords[i][0],hold_coords[i][1],hold_id[i])
         hold_list.append(newHold)
     return hold_list
 
 # Draws a list of hold objects onto the screen
-def drawHolds(window,holdlist):
+def drawHolds(window,holdlist, height):
     #window.fill(WHITE)
+    scale = height/8
     for hold in holdlist:
-        hold.draw(window)
+        hold.draw(window, scale)
     pygame.display.update()
 
-def drawPath(window, path,colour):
+def drawPath(window, path,colour,scale):
     #window.fill(WHITE)
     path = list(path.values())
     for i in range(len(path)-1):
-        pygame.draw.line(window, colour, path[i].get_position(), path[i+1].get_position(), 5)
+        pygame.draw.line(window, colour, (path[i].get_position()[0]*scale,path[i].get_position()[1]*scale),
+                         (path[i+1].get_position()[0]*scale,path[i+1].get_position()[1]*scale), 5)
     pygame.display.update()
 
 def printFont(window,font,text,x,y):
@@ -240,15 +258,15 @@ def printHoldNumber(window,path,font):
         text = str(key_list[i])
         printFont(window,font,text,x,y)
         
-def update_neighbours_feet(classHoldsList):
+def update_neighbours(classHoldsList,height):
     for i in classHoldsList:
-        i.update_neighbors(classHoldsList)
+        i.update_neighbors(classHoldsList, height)
         i.update_feet(classHoldsList)
 
-def draw_paths(colours,paths,screen):
+def draw_paths(colours,paths,screen,scale):
     for j, path in enumerate(paths):
             col = colours[j]
-            drawPath(screen,path,col) 
+            drawPath(screen,path,col,scale)
             
 # Hurestic function (Are we getting closer to the goal?)
 def heuristic(p1, p2):  #p1, p2 are cooridantes ie (x,y)
@@ -256,24 +274,19 @@ def heuristic(p1, p2):  #p1, p2 are cooridantes ie (x,y)
 	x2, y2 = p2.get_position()
 	return abs(x1 - x2) + abs(y1 - y2) # Manhatten distance
 
-
 def g(p1, p2):  #p1, p2 are cooridantes ie (x,y)
 	x1, y1 = p1.get_position()
 	x2, y2 = p2.get_position()
 	return math.sqrt((x1 - x2)**2 + (y1 - y2)**2) # Eculidan Distance
 
-def find_paths(start_left, start_right, start_foot_left, start_foot_right, end, holdList):
+def find_paths(start_left, start_right, end, holdList):
     
 
     left_path = {1: start_left}
     right_path = {1: start_right}
     
-    left_foot_path = {1: start_foot_left}
-    right_foot_path = {1: start_foot_right}
-    
     #Define list of all paths
     paths = [left_path, right_path]
-    foot_paths = [left_foot_path, right_foot_path]
     
     last_hold_in_path = start_left
     count = 1
@@ -329,8 +342,7 @@ def find_paths(start_left, start_right, start_foot_left, start_foot_right, end, 
         currentPath = paths[1]
         currentPath[count] = end        
     
-    return paths, foot_paths
-  
+    return left_path, right_path
 
 def get_left_right_feet(feet):
     
@@ -448,144 +460,246 @@ def get_feet(hand_paths, start_foot_left, start_foot_right):
         
     return left_foot_path, right_foot_path
 
-##############################################################################    
-####################### Main to test Beta Stuff ##############################
-##############################################################################
-#def main():
-#    # Screen Setup
-#    (width, height) = (400, 780)
-#    screen = pygame.display.set_mode((width, height))
-#    pygame.display.set_caption('Simple Path')
-#    screen.fill(WHITE)
-#    pygame.display.flip()
-#    
-#    # Take hold cooridantes and make them into Hold Class objects
-#    ############# Can change holds list used in this line #################
-#    classHoldsList = make_holds(holdsList1)
-#    
-#    # Set start and end holds
-#    start = classHoldsList[3]
-#    start.make_start()
-#    
-#    
-#    left_foot = classHoldsList[0]
-#    right_foot = classHoldsList[1]
-#    
-#    print(start.get_position())
-#    print(classHoldsList[2].get_position())
-#    print(left_foot.get_position())
-#    print(right_foot.get_position())
-#    
-#    classHoldsList[13].update_feet(classHoldsList)
-#    
-#    classHoldsList[8].twohands = True
-#    
-#    end = classHoldsList[-1]
-#    end.make_end()
-#    
-#    # Get neighbours for each hold
-#    update_neighbours_feet(classHoldsList)
-#    
-#    # Find paths
-#    hand_paths, foot_paths = find_paths(start, start, left_foot, right_foot, end, classHoldsList)
-##    print(paths)
-#    print(list(hand_paths[0]))
-#    print(list(hand_paths[1]))
-#    
-#    
-#    left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
-#    
-#    print(left_feet)
-#    print(right_feet)
-#    
-#    feet_paths = [left_feet,right_feet]
-#    
-#    pygame.init() # intilize font
-#    font=pygame.font.SysFont('helvetica',20) #define the font and size
-#    
-##    printHoldNumber(screen,hand_paths[0],font)
-##    printHoldNumber(screen,hand_paths[1],font)
-#    
-#    printHoldNumber(screen,feet_paths[0],font)
-#    printHoldNumber(screen,feet_paths[1],font)
-#    
-##    for i in paths[1].holds:
-##        i.make_neighbor()
-#    
-#    # Use a loop so the window stays open
-#    # But this means that pygame is always redrawing
-#    running = True
-#    while running:
-#        # If the X button is clicked quit pygame screen
-#        for event in pygame.event.get():
-#            if event.type == pygame.QUIT:
-#                running = False
-#        
-#        # Draw holds on screen
-#        drawHolds(screen,classHoldsList)
-#        
-#        #Draw Paths
-#        colours = [PURPLE, GREY]
-##        draw_paths(colours,hand_paths,screen)
-#        draw_paths(colours,feet_paths,screen)
-#    
-#    
-#    pygame.quit()
-    
-############################################################################
-####################### Main to test CM Stuff ##############################
-############################################################################
-    
-def main():
-    # Screen Setup
-    (width, height) = (400, 780)
+def scale_coords(cords_m,h):
+    ratio = h/8
+    cords = cords_m.copy()
+    for i in cords:
+        i[0] = i[0]*ratio
+        i[1] = i[1]*ratio
+
+    return cords, ratio
+
+def set_start(start):
+    start.make_start()
+
+def set_end(end):
+    end.make_end()
+
+def get_holds(cv_list,img_height):
+    coords = []
+    id = []
+
+    # Get coords and id seprate
+    for i in cv_list:
+        coords.append(i[0])
+        id.append(i[2])
+
+    # Scale coords
+    scale = img_height/6
+    for i in coords:
+        i[0] = i[0]/scale
+        i[1] = i[1]/scale
+
+    print(coords)
+    classHoldsList = make_holds(coords,id)
+    return classHoldsList
+
+def screen_setup(width,height):
     screen = pygame.display.set_mode((width, height))
     pygame.display.set_caption('Simple Path')
     screen.fill(WHITE)
     pygame.display.flip()
-    
-    pygame.init() # intilize font
-    font=pygame.font.SysFont('helvetica',20) #define the font and size
-    
-    rax = 325
-    ray = 275
-    lax = 275
-    lay = 275
-    rlx = 325
-    rly = 500
-    llx = 275
-    lly = 500
-    bx = 160
-    by = 300
-    
-    
-    body = Body(rax, ray, lax, lay, rlx, rly, llx, lly,bx,by)
-    
-    # Use a loop so the window stays open
-    # But this means that pygame is always redrawing
+
+    return screen
+##############################################################################    
+####################### Main to test Beta Stuff ##############################
+##############################################################################
+# def main():
+#     path = r"C:\Users\paule\PycharmProjects\Capstone\Wall Factors\testWalls\Wall9.JPEG"
+#     testImg = cv2.imread(path)
+#     coords = U.photoToCoords(testImg)
+#     print(coords)
+#     scaled = scale_coords(coords, 780, 400)
+#     print(scaled)
+#
+#     # Screen Setup
+#     (width, height) = (400, 780)
+#     screen = pygame.display.set_mode((width, height))
+#     pygame.display.set_caption('Simple Path')
+#     screen.fill(WHITE)
+#     pygame.display.flip()
+#
+#     # Take hold cooridantes and make them into Hold Class objects
+#    ############# Can change holds list used in this line #################
+#     # classHoldsList = make_holds(holdsList1)
+#
+#    # Set start and end holds
+#     start = classHoldsList[3]
+#     start.make_start()
+#
+#     left_foot = classHoldsList[0]
+#     right_foot = classHoldsList[1]
+#
+#     # print(start.get_position())
+#     # print(classHoldsList[2].get_position())
+#     # print(left_foot.get_position())
+#     # print(right_foot.get_position())
+#
+#     classHoldsList[13].update_feet(classHoldsList)
+#
+#     classHoldsList[8].twohands = True
+#
+#     end = classHoldsList[-1]
+#     end.make_end()
+#
+#     # Get neighbours for each hold
+#     update_neighbours_feet(classHoldsList)
+#
+#     # Find paths
+#     hand_paths, foot_paths = find_paths(start, start, left_foot, right_foot, end, classHoldsList)
+#     # print(paths)
+#     # print(list(hand_paths[0]))
+#     # print(list(hand_paths[1]))
+#
+#     left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
+#
+#     # print(left_feet)
+#     # print(right_feet)
+#
+#     feet_paths = [left_feet,right_feet]
+#
+#     pygame.init() # intilize font
+#     font=pygame.font.SysFont('helvetica',20) #define the font and size
+#
+# #    printHoldNumber(screen,hand_paths[0],font)
+# #    printHoldNumber(screen,hand_paths[1],font)
+#
+#     printHoldNumber(screen,feet_paths[0],font)
+#     printHoldNumber(screen,feet_paths[1],font)
+#
+# #    for i in paths[1].holds:
+# #        i.make_neighbor()
+#
+#    # Use a loop so the window stays open
+#    # But this means that pygame is always redrawing
+#     running = True
+#     while running:
+#        # If the X button is clicked quit pygame screen
+#        for event in pygame.event.get():
+#            if event.type == pygame.QUIT:
+#                running = False
+#
+#        # Draw holds on screen
+#        drawHolds(screen,classHoldsList)
+#
+#        #Draw Paths
+#        colours = [PURPLE, GREY]
+# #        draw_paths(colours,hand_paths,screen)
+#        draw_paths(colours,feet_paths,screen)
+#
+#
+#     pygame.quit()
+
+def do_beta(cv_coords_list,start_left_id,start_right_id,end_id,left_foot_id, right_foot_id, img_height):
+    # make image into list of hold objects
+    classHoldsList = get_holds(cv_coords_list, img_height)
+    height = 1.6825
+    # classHoldsList[9].make_orange()
+    # classHoldsList[9].update_neighbors(classHoldsList, height)
+
+    # Set start and end for feet and hands
+    for i in classHoldsList:
+        if i.get_id() == start_right_id:
+            start_right = i
+            set_start(i)
+        if i.get_id() == start_left_id:
+            start_left = i
+            set_start(i)
+        if i.get_id() == end_id:
+            end = i
+            set_end(i)
+        if i.get_id() == left_foot_id:
+            left_foot = i
+            set_start(i)
+        if i.get_id() == right_foot_id:
+            right_foot = i
+            set_start(i)
+
+    # Get neighbours for each hold
+    update_neighbours(classHoldsList,height)
+
+    # Find hand and foot paths
+    hand_left,hand_right = find_paths(start_left, start_right, end, classHoldsList)
+    # foot_left, foot_right = get_feet([hand_left,hand_right], left_foot, right_foot)
+
+    # hand_left = {}
+    # hand_right = {}
+    foot_left = {}
+    foot_right = {}
+
+    return hand_right,hand_left,foot_right,foot_left,classHoldsList
+
+def main():
+    # choose image
+
+    coords_list_1 = [[[334,53],'Green',3],[[383,125],'Green',4],[[333,165],'Green',6],[[269,273],'Green',9],
+                     [[304,336],'Green',11],[[264,386],'Green',13],[[187,504],'Green',19],[[219,561],'Green',21],
+                     [[333,626],'Green',23],[[129,712],'Green',25],[[295,781],'Green',27],[[130,932],'Green',31],
+                     [[212,1055],'Green',33]]
+
+    img_height1 = 1111
+
+    start_left_id = 25
+    start_right_id = 25
+    end_id = 3
+    right_foot_id = 33
+    left_foot_id = 31
+
+    hand_right,hand_left,foot_right,foot_left,classHoldsList = \
+        do_beta(coords_list_1,start_left_id,start_right_id,end_id,left_foot_id,right_foot_id,img_height1)
+
+    # Screen Setup
+    (width, height) = (300, 780)
+    screen = screen_setup(width,height)
+
+    # Draw holds
+    drawHolds(screen, classHoldsList, height)
+
+    print(hand_right)
+    print(hand_left)
+    hand_paths = [hand_right,hand_left]
+    scale = 780/8
+    # Draw Paths
+    colours = [PURPLE, GREY]
+    draw_paths(colours, hand_paths, screen, scale)
+    # draw_paths(colours,feet_paths,screen)
     running = True
     while running:
         # If the X button is clicked quit pygame screen
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        
-        # Draw holds on screen
-#        drawHolds(screen,classHoldsList)
-        
-        body.draw_whole_body(screen)
-        body.make_centres()
-        body.centre_mass()
-        body.draw_cm(screen)
-        pygame.display.update()
-        
-        
-        #Draw Paths
-        colours = [PURPLE, GREY]
-#        draw_paths(colours,hand_paths,screen)
-#        draw_paths(colours,feet_paths,screen)
-    
-    
+
     pygame.quit()
+    ################################################
+    # Get neighbours for each hold
+    # update_neighbours(classHoldsList)
+
+    # classHoldsList[8].twohands = True
+
+   #
+   #  left_foot = classHoldsList[0]
+   #  right_foot = classHoldsList[1]
+   #
+   #  classHoldsList[13].update_feet(classHoldsList)
+   #
+   #  classHoldsList[8].twohands = True
+
+    # Find paths
+    # hand_paths = find_paths(start, start, end, classHoldsList)
+   #
+   #  left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
+   #
+   #  feet_paths = [left_feet,right_feet]
+   #
+   #  pygame.init() # intilize font
+   #  font=pygame.font.SysFont('helvetica',20) #define the font and size
+   #
+   #  printHoldNumber(screen,feet_paths[0],font)
+   #  printHoldNumber(screen,feet_paths[1],font)
+
+   # Use a loop so the window stays open
+   # But this means that pygame is always redrawing
+
 
 main()

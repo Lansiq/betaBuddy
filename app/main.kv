@@ -16,12 +16,15 @@ WindowManager:
     HoldsScreen:
         name: "holds_screen"
         id: holds_screen
-    BetaScreen:
-        name: "beta_screen"
-        id: beta_screen
+    StartEndSelectScreen:
+        name: "startendselect_screen"
+        id: startendselect_screen
     StepsScreen:
         name: "steps_screen"
         id: steps_screen
+    InstructionScreen:
+        name: "instruction_screen"
+        id: instruction_screen
 
 <Button>
     size_hint: (0.7, 0.05)
@@ -150,7 +153,9 @@ WindowManager:
             source: root.manager.image_source
         
         ToggleButton:
+            id: select_toggle
             text: "Select Route"
+            size_hint: (0.6, 0.05)
             pos_hint: {"x": 0.2, "top": 1.0}
             on_press:
                 root.toggle_select()
@@ -178,7 +183,7 @@ WindowManager:
             pos_hint: {"x": 0.15, "top": 0.15}
             on_press:
                 app.root.transition.direction = 'left'
-                app.root.current = "beta_screen"
+                app.root.current = "startendselect_screen"
         Button:
             id: backToCamera
             text: "Take another photo"
@@ -187,45 +192,67 @@ WindowManager:
                 app.root.transition.direction = 'right'
                 app.root.current = "camera_screen"
     
-<BetaScreen>:
-    FloatLayout: 
-        Image:
+<StartEndSelectScreen>
+    FloatLayout:
+        Image: 
+            id: my_image
             source: root.manager.image_source
-        Label:
-            text: "Beta Analysis"
-            color: 1,0,0,1
-
         ToggleButton:
-            id: start_toggle
-            text: "Start"
-            pos_hint: {"x": 0.2, "top": 1}
-            on_press:
-                root.toggle_start()
+            id: toggleRHand
+            text: "Right Hand"
+            size_hint: (0.15, 0.05)
+            pos_hint: {"x":0.05, "top": 0.95}
+            on_press: 
+                root.toggle("RHand")
         ToggleButton:
-            id: stop_toggle     
-            text: "Stop"
-            pos_hint: {"x": 0.4, "top": 1}
+            id: toggleLHand
+            text: "Left Hand"
+            size_hint: (0.15, 0.05)
+            pos_hint: {"x":0.25, "top": 0.95}
+            on_press: 
+                root.toggle("LHand")
+        ToggleButton: 
+            id: toggleRFoot
+            text: "Right Foot"
+            size_hint: (0.15, 0.05)
+            pos_hint: {"x":0.45, "top": 0.95}
+            on_press: 
+                root.toggle("RFoot")
+        ToggleButton:
+            id: toggleLFoot
+            text: "Left Foot"
+            size_hint: (0.15, 0.05)
+            pos_hint: {"x":0.65, "top": 0.95}
+            on_press: 
+                root.toggle("LFoot")
+        ToggleButton:
+            id: toggleEnd
+            text: "End Hold"
+            size_hint: (0.15, 0.05)
+            pos_hint: {"x": 0.85, "top": 0.95}
             on_press:
                 root.toggle_stop()
-        Button:        
+        Button:
             text: "Reset"
-            size_hint: (0.2, 0.05)
-            pos_hint: {"x": 0.6, "top": 1}
+            size_hint: (0.8, 0.05)
+            pos_hint: {"x":0.1, "top":0.90 }
             on_press:
                 root.reset()
         Button:
-            text: "Step-by-Step Instructions"
-            pos_hint: {"x": 0.15, "top": 0.15}
+            id: returnToBeta
+            text: "Calculate Beta"
+            pos_hint: {"x": 0.2, "top": 0.10}
+            disabled: True
             on_press:
                 app.root.transition.direction = 'left'
                 app.root.current = "steps_screen"
         Button:
             text: "Capture Another Wall"
-            pos_hint: {"x": 0.15, "top": 0.10}
+            pos_hint: {"x": 0.15, "top": 0.}
             on_press:
                 app.root.transition.direction = 'right'
                 app.root.current = "camera_screen"
-
+            
 <StepsScreen>:
     FloatLayout:
         Image: 
@@ -236,6 +263,9 @@ WindowManager:
             pos_hint: {"x": 0.15}
             text: "Step by Step Instructions"
             color: 0,1,0,1
+            on_press:
+                app.root.transition.direction = 'left'
+                app.root.current = "instruction_screen"
         Button:
             text: "Next Step"
             size_hint: (0.3, 0.05)
@@ -249,3 +279,21 @@ WindowManager:
             on_press:
                 root.update(-1)
 
+<InstructionScreen>:
+    FloatLayout:
+        Label:
+            id: allSteps
+            text: ""
+            size: self.texture_size
+            pos_hint: {"top": 1}
+            
+        Button:
+            id: back
+            pos_hint: {"x": 0.15}
+            text: "Back to Step-By-Step"
+            color: 0,1,0,1
+            on_press: 
+                app.root.transition.direction = 'right'
+                app.root.current = "steps_screen"
+
+            

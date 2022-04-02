@@ -263,9 +263,36 @@ def photoToAppCoords(testImg, appHeight, appWidth):
 
 def offsetCoords(coords, testImg, appWidth, appHeight):
     offset = (appHeight - (testImg.shape[0])*(appWidth/testImg.shape[1]) )/2.0
-
+## Offsets the horizontal coordinates based on the application width
+# int coords = 2D array holding x,y pairs of coordinates for holds
+# cv2 img = image of wall
+# int appDim = larger dimensions of application window
+# int coordDim = dimensions of coordinate to offset
+def offsetCoords(coords, testImg, appDim, coordDim):
+    # Shape has [heigh, width] while coords has [x,y]. So indexing is opposite
+    offset = (appDim - (testImg.shape[(coordDim+1)%2])*(appDim/testImg.shape[coordDim]))/2.0
+    print(offset)
     offsetCoords = coords
     for i in range(len(coords)):
-        offsetCoords[i][1] = coords[i][1] + offset
+        offsetCoords[i][coordDim] = coords[i][coordDim] + offset
 
     return offsetCoords
+
+## Converts coordinates from CV to coordinates needed for application
+# int coords = 2D array holding x,y pairs of coordinates for holds
+# cv2 img = image of wall
+# int appWidth, appHeight = dimensions of application window
+def cvCoordsToAppCoords(coords,img,appHeight,appWidth):
+    appCoords = flipCoords(coords,img)
+
+    # Scale is depending on largest dimension
+    if(appHeight > appWidth):
+        print("Offset Width")
+        appCoords = scaleCoords(appCoords, img, img.shape[0]/appHeight)
+        appCoords = offsetCoords(appCoords, img, appWidth, 0)
+    else:
+        print("Offset Height")
+        appCoords = scaleCoords(appCoords, img, img.shape[1]/appWidth)
+        appCoords = offsetCoords(appCoords, img, appHeight, 1)
+
+    return appCoords

@@ -16,7 +16,7 @@ import pandas as pd
 import imageio
 
 """
-EXAMPLE USE
+#EXAMPLE USE
 
 rightArm = {
     '1' : '24',
@@ -51,7 +51,8 @@ Holds = [[[675, 39], 'Yellow', 0], [[933, 2], 'Red', 1], [[574, 28], 'Red', 2], 
 
 Results = cv2.imread('Wall8.png')
 Results2 = Animation(Results, 3, 1.5, Holds,leftArm, rightArm, leftFoot, rightFoot)
-imageio.mimsave('videotest.gif', Results2, fps=0.5)
+imageio.mimsave('videotest.gif', Results2[0], fps=0.5)
+print(Results2[1])
 
 """
 
@@ -98,6 +99,7 @@ def Next_Step_Lines(Original, Current_Step, Next_Step):
 def ImageFrames(Original, Every_Step,Body_Sizes_Pixel):
     All_Frames = []
     i = 0
+    File_Paths = []
     for Step in Every_Step:
         Frame = Original.copy()
         
@@ -116,15 +118,16 @@ def ImageFrames(Original, Every_Step,Body_Sizes_Pixel):
             Output = Draw_Sandro(Frame, Step, Body_Center_Optimal, Body_Sizes_Pixel, TheStart = True)
             
         
-        #cv2.imwrite("Euirkea" + str(i) + ".png", Output)
+        cv2.imwrite("Frame" + str(i) + ".png", Output)
         
         Output = cv2.cvtColor(Output, cv2.COLOR_BGR2RGB)
         
         All_Frames.append(Output)
+        File_Paths.append("Frame" + str(i) + ".png")
         
         i = i + 1
         
-    return All_Frames
+    return [All_Frames,File_Paths]
 
 
 #This Function Converts a Hold Number (From Beta) to the Cords Associated with that Hold Number

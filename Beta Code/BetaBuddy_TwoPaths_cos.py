@@ -446,7 +446,7 @@ def sort_beta(beta_stances, end_id):
 
 
 # Take climber height and wall height
-def beta(cv_route,image_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_h, wall_h):
+def paulette_beta(cv_route,image_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_h, wall_h):
     hold_objects = get_holds(cv_route, image_height,wall_h)
     start_stance, end_hold = get_startstance_end(hold_objects,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id)
     all_stances = stable_stances(hold_objects, start_left_id, start_right_id, climber_h)
@@ -455,45 +455,22 @@ def beta(cv_route,image_height,start_left_id, start_right_id, end_id, left_foot_
 
     return final, beta_stance_list, hold_objects, all_stances
 
+def beta(cv_route,image_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_h, wall_h):
+    hold_objects = get_holds(cv_route, image_height,wall_h)
+    start_stance, end_hold = get_startstance_end(hold_objects,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id)
+    all_stances = stable_stances(hold_objects, start_left_id, start_right_id, climber_h)
+    beta_stance_list = beta_stances(start_stance, all_stances, end_hold,climber_h)
+    final = sort_beta(beta_stance_list,end_id)
+
+    return final
+
 def main():
     print("Hello World")
-    # Only line needed to get beta output for app
-    for_alex, beta_stances_list, holds, stances = beta(wall4,wall4_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_height, wall_height)
-    print(beta_stances_list[0][0].get_id())
 
-    ### Draw suff for testing
-    # Set up screen
-    (width, height) = (400, 780)
-    screen = screen_setup(width, height)
+    ##################### Black Box #####################
+    black_box_output = beta(wall4,wall4_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_height, wall_height)
 
-    # Draw holds
-    drawHolds(screen, holds, height)
+    print(black_box_output)
 
-    running = True
-    i = 0
-    while running:
-        # If the X button is clicked quit pygame screen
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    screen.fill(WHITE)
-                    drawHolds(screen, holds, height)
-                    i += 1
-
-                if event.key == pygame.K_BACKSPACE:
-                    screen.fill(WHITE)
-                    drawHolds(screen, holds, height)
-                    i -= 1
-
-        if i > len(beta_stances_list) - 1:
-            i = 0
-
-        draw_stance(beta_stances_list[i], height, screen)
-        # body = B.Body(beta_stances_list[i][0].get_position(),beta_stances_list[i][1].get_position(),beta_stances_list[i][2].get_position(),beta_stances_list[i][3].get_position(),person_height)
-        # body.drawBody()
-    pygame.quit()
 
 main()

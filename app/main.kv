@@ -25,6 +25,9 @@ WindowManager:
     InstructionScreen:
         name: "instruction_screen"
         id: instruction_screen
+    CameraHoldsScreen:
+        name: "cam_holds_screen"
+        id: cam_holds_screen
 
 <Button>
     size_hint: (0.7, 0.05)
@@ -105,13 +108,13 @@ WindowManager:
             on_press:
                 root.capture()
         Button:
-            text: 'Select Wall Photo'
+            text: 'Continue to Hold Identification'
             pos_hint: {"x": 0.15, "top": 0.10 }
             on_press:
                 # root refers to <CameraScreen>
                 # app refers to captureWallApp, app.root refers to the GridLayout: at the top
                 app.root.transition.direction = 'left'
-                app.root.current = 'gallery_screen'
+                app.root.current = 'cam_holds_screen'
 
 <GalleryScreen>:
     FloatLayout:
@@ -295,5 +298,42 @@ WindowManager:
             on_press: 
                 app.root.transition.direction = 'right'
                 app.root.current = "steps_screen"
-
             
+<CameraHoldsScreen>:
+    FloatLayout:
+        Image:
+            id: img
+            source: root.manager.image_source
+        
+        ToggleButton:
+            id: select_toggle
+            text: "Select Route"
+            size_hint: (0.6, 0.05)
+            pos_hint: {"x": 0.2, "top": 1.0}
+            on_press:
+                root.toggle_select()
+        Button:        
+            text: "Reset"
+            size_hint: (0.2, 0.05)
+            pos_hint: {"x": 0.6, "top": 0.95}
+            on_press:
+                root.reset()
+        ToggleButton:
+            id: add_toggle
+            text: "Add"
+            pos_hint: {"x": 0.2, "top": 0.95}
+            on_press:
+                root.toggle_add() 
+        ToggleButton:
+            id: delete_toggle      
+            text: "Delete"
+            pos_hint: {"x": 0.4, "top": 0.95}
+            on_press:
+                root.toggle_delete()
+        Button:
+            id: backToCamera
+            text: "Take another photo"
+            pos_hint: {"x": 0.15, "top": 0.10}
+            on_press:
+                app.root.transition.direction = 'right'
+                app.root.current = "camera_screen"

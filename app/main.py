@@ -72,7 +72,7 @@ class SettingsScreen(Screen):
 class CameraScreen(Screen):
     def capture(self):
         camera = self.ids['camera']
-        camera.export_to_png("WALL.png")
+        camera.export_to_png("cameraCapture.png")
 
 #Use device's files to select photo of wall
 class GalleryScreen(Screen):
@@ -282,6 +282,55 @@ class HoldsScreen(Screen):
             
         #Overwrite method by returning the method of the super class
         return super(HoldsScreen, self).on_touch_down(touch)
+
+class CameraHoldsScreen(HoldsScreen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def on_enter(self):
+        '''
+        Changed to grab image from default capture location
+        '''
+        #Get background image as selected from gallery screen
+        self.ids.my_image.source = "cameraCapture.png"
+        image = self.manager.get_screen("cam_holds_screen").ids.my_image.source
+
+        '''
+        Changes end here
+        '''
+
+        #CV Wall with image input
+        cvWall = cv.inputImageFile(image)
+
+        #Output from Dom's Function
+        self.holdList = domCV.CV(image)[1]
+        print(self.holdList)
+
+        #Creating dictionary that separates routes by colour {colour: [[[x1,y1], ID1], [[x2,y2],ID2]} 
+        routes = {} 
+        for holdInfo in self.holdList:
+            if holdInfo[1] in routes.keys():
+               routes[holdInfo[1]].append([holdInfo[0],holdInfo[2]])
+            else:
+                routes[holdInfo[1]] = [[holdInfo[0],holdInfo[2]]]      
+
+        self.appRoutes = routes.copy()
+        self.extractCoords(routes, cvWall)
+
+        #Self.holds is a holdList but in app coordinates
+        self.holds = []
+        for colour in self.appRoutes:
+            #Add coordinates and hold IDs to list
+            for holdInfo in self.appRoutes[colour]:
+                print(holdInfo)
+                self.holds.append([tuple(holdInfo[0]), colour, holdInfo[1]])
+
+        #Save original set of points for reset button
+        self.origHolds = self.holds.copy()
+        
+        self.draw_points(self.holds)
+
+
 '''
 #Screen for selecting start, end, and calculation of beta
 class BetaScreen(Screen):

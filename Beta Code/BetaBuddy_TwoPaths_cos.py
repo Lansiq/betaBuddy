@@ -3,17 +3,14 @@
 Created on Mon Dec 27 20:30:36 2021
 
 @author: paule
-
-modified from: https://www.pythonpool.com/a-star-algorithm-python/
-pygame tutorial: https://www.youtube.com/watch?v=8dfePlONtls
 """
-
 
 # Import needed libaries
 import pygame
 import math
 import util as U
-import cv2
+import itertools
+import body as B
 
 # Define different colours for convience
 RED = (255, 0, 0)
@@ -27,117 +24,102 @@ ORANGE = (255, 165 ,0)
 GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
 
-# A list of the corridants of the holds
-holdsList1 = [[70,770],[225,650],[150,580],[175,450],[290,480],[310,410],[225,375],[210,350],[275,275],[300,225],[275,190],[325,130],[350,120],[325,75]]
-holdsList11 = [[175,450],[290,480],[310,410],[225,375],[210,350],[275,275],[300,225],[275,190]]
-holdsList2 = [[210,720],[300,720],[180,620],[80,550],[300,500],[190,490],[120,370],[75,320],[190,300],[100,220],[120,120]]
+# Wall Height
+wall_height = 3
 
-class Body:
-    def __init__(self, rax, ray, lax, lay, rlx, rly, llx, lly,bx,by):
-        
-        self.bx = bx
-        self.by = by
-        self.rax = rax
-        self.ray = ray
-        self.lax = lax
-        self.lay = lay
-        self.rlx = rlx
-        self.rly = rly
-        self.llx = llx
-        self.lly = lly
-        
-        self.arm_weight = 1/16
-        self.leg_weight = 3/16
-        self.body_weight = 1/2
-        
-        self.cm_x = None
-        self.cm_y = None
-        
-        self.body_centre_x = None
-        self.body_centre_y = None
-        
-        self.armR_centre_x = None
-        self.armR_centre_y = None
-        
-        self.armL_centre_x = None
-        self.armL_centre_y = None
-        
-        self.legR_centre_x = None
-        self.legR_centre_y = None
-        
-        self.legL_centre_x = None
-        self.legL_centre_y = None
-        
-        self.scale = 200
-        
-        self.max_arm_length = 0.7525*self.scale
-        self.max_leg_length = 0.8775*self.scale
-        self.body_width = 0.3913*self.scale
-        self.body_length = 0.51*self.scale
-        self.density = 0.5*self.scale
-        
-    def get_midpoint(self, x1,x2,y1,y2):
-        Mx = (x1 + x2)/2
-        My = (y1 + y2)/2
-        
-        return Mx, My
-        
-    def make_centres(self):
-        self.body_centre_x = self.bx + self.body_width/2
-        self.body_centre_y = self.by + self.body_length/2
-        
-        self.armR_centre_x, self.armR_centre_y = self.get_midpoint(self.rax, self.bx + self.body_width, self.ray, self.by) 
-        
-        self.armL_centre_x, self.armL_centre_y = self.get_midpoint(self.lax,self.bx,self.lay,self.by) 
-        
-        self.legR_centre_x, self.legR_centre_y = self.get_midpoint(self.rlx,self.bx+self.body_width,self.rly,self.by+self.body_length) 
-        
-        self.legL_centre_x, self.legL_centre_y = self.get_midpoint(self.llx,self.bx,self.lly,self.by+self.body_length) 
-    
-    def centre_mass(self):
-#        self.cm_x = self.body_weight*self.body_centre_x + self.arm_weight*(self.armR_centre_x + self.armL_centre_x) + self.leg_weight*(self.legR_centre_x + self.legL_centre_x)           
-#        self.cm_y = self.body_weight*self.body_centre_y + self.arm_weight*(self.armR_centre_y + self.armL_centre_y) + self.leg_weight*(self.legR_centre_y + self.legL_centre_y)           
-        
-        self.cm_x = self.body_weight*self.body_centre_x + self.arm_weight*(self.rax + self.lax) + self.leg_weight*(self.rlx + self.llx)           
-        self.cm_y = self.body_weight*self.body_centre_y + self.arm_weight*(self.ray + self.lay) + self.leg_weight*(self.rly + self.lly)
-        
-    def get_cm(self):
-        return self.cm_x, self.cm_y
-    
-    def draw_right_arm(self, window):
-        pygame.draw.line(window, BLACK, (self.rax, self.ray), (self.bx+self.body_width, self.by),3)
-        
-    def draw_left_arm(self, window):
-        pygame.draw.line(window, BLACK, (self.lax, self.lay), (self.bx, self.by),3)
-        
-    def draw_right_leg(self, window):
-        pygame.draw.line(window, BLACK, (self.rlx, self.rly), (self.bx+self.body_width, self.by+self.body_length),3)
-    
-    def draw_left_leg(self, window):
-        pygame.draw.line(window, BLACK, (self.llx, self.lly), (self.bx, self.by+self.body_length),3)
-        
-    def draw_body(self, window):
-        pygame.draw.line(window, BLACK, (self.bx, self.by), (self.bx+self.body_width, self.by),3)        
-        pygame.draw.rect(window, BLACK, (self.bx,self.by,self.body_width,self.body_length), 3)
-        
-    def draw_whole_body(self, window):
-        self.draw_right_arm(window); self.draw_left_arm(window); self.draw_right_leg(window); self.draw_left_leg(window); self.draw_body(window)
-        
-    def draw_cm(self,window):
-        pygame.draw.circle(window, RED,(self.cm_x, self.cm_y), 5)
+# Height
+climber_height = 1.76
+# short person
+climber_height = 1.56
+# Tall person
+# climber_height = 1.82
 
-# Define class Hold
+
+## Different routes - would be given as output to another route
+### Yellow
+yellow_route = [[[661, 478], 'Yellow', 0], [[663, 676], 'Yellow', 2], [[962, 968], 'Yellow', 3],
+                [[847, 1117], 'Yellow', 4], [[1030, 1393], 'Yellow', 6], [[765, 1674], 'Yellow', 11],
+                [[941, 1728], 'Yellow', 14], [[705, 2182], 'Yellow', 18], [[365, 2112], 'Yellow', 19],
+                [[1031, 2277], 'Yellow', 26], [[709, 2709], 'Yellow', 32], [[697, 2892], 'Yellow', 37],
+                [[578, 3054], 'Yellow', 38], [[239, 3230], 'Yellow', 39]]
+
+yellow_height = 3537
+
+# Yellow IDs
+start_left_id = 18
+start_right_id = 18
+end_id = 0
+right_foot_id = 38
+left_foot_id = 39
+
+### Purple
+purple_route = [[[556, 513], 'Yellow', 1], [[588, 922], 'Yellow', 2], [[1080, 979], 'Yellow', 3],
+                [[644, 1356], 'Yellow', 4], [[1020, 1535], 'Yellow', 5],[[862, 1739], 'Yellow', 6],
+                [[1154, 1984], 'Yellow', 7], [[1054, 2079], 'Yellow', 8], [[1325, 2176], 'Yellow', 9],
+                [[1013, 2342], 'Yellow', 10], [[518, 2423], 'Yellow', 11], [[1513, 2552], 'Yellow', 12],
+                [[979, 2700], 'Yellow', 13], [[607, 2818], 'Yellow', 14], [[1320, 2975], 'Yellow', 15],
+                [[592, 3016], 'Yellow', 16], [[1173, 3207], 'Yellow', 17]]
+
+purple_height = 3345
+
+# Purple IDs
+start_left_id = 10
+start_right_id = 12
+end_id = 1
+right_foot_id = 17
+left_foot_id = 16
+
+# Wall1 = Yellow 1
+wall1 = [[[395, 140], 'Yellow', 0], [[422, 309], 'Yellow', 1], [[218, 487], 'Yellow', 2], [[414, 665], 'Yellow', 3],
+         [[344, 846], 'Yellow', 4], [[528, 1030], 'Yellow', 5], [[436, 1122], 'Yellow', 6], [[618, 1299], 'Yellow', 7],
+         [[77, 1299], 'Yellow', 8], [[510, 1599], 'Yellow', 10], [[609, 1698], 'Yellow', 11], [[698, 1915], 'Yellow', 12],
+         [[340, 1921], 'Yellow', 13], [[426, 2252], 'Yellow', 14], [[792, 2293], 'Yellow', 15], [[328, 2598], 'Yellow', 16]]
+
+wall1_height = 2666
+
+start_left_id = 10; start_right_id = 11
+end_id = 0
+right_foot_id = 15; left_foot_id = 16
+
+# Wall2 = Pink 1
+wall2 = [[[522, 365], 'Red', 0], [[536, 463], 'Red', 1], [[442, 550], 'Red', 2], [[555, 669], 'Red', 3], [[500, 725], 'Red', 4],
+        [[562, 892], 'Red', 7], [[561, 1006], 'Red', 8], [[510, 1073], 'Red', 9], [[628, 1188], 'Red', 10],[[517, 1342], 'Red', 11],
+         [[646, 1467], 'Red', 12]]
+
+wall2_height = 1614
+
+start_left_id = 7; start_right_id = 7
+end_id = 0
+right_foot_id = 12; left_foot_id = 11
+
+# Wall3 = Green 1
+wall3 = [[[369, 497], 'Green', 19], [[418, 569], 'Green', 20], [[367, 609], 'Green', 22], [[304, 717], 'Green', 26], [[338, 780], 'Green', 29],
+         [[299, 830], 'Green', 31], [[222, 949], 'Green', 39], [[254, 1005], 'Green', 41], [[368, 1070], 'Green', 42], [[164, 1157], 'Green', 45],
+         [[330, 1225], 'Green', 49], [[165, 1376], 'Green', 53], [[248, 1502], 'Green', 55], [[48, 1681], 'Green', 59]]
+
+wall3_height = 1718
+
+# start_left_id = 45; start_right_id = 45
+# end_id = 19
+# right_foot_id = 55; left_foot_id = 59
+
+wall4 = [[[316, 114], 'Red', 0], [[359, 242], 'Red', 1], [[405, 290], 'Red', 2], [[402, 396], 'Red', 3], [[434, 519], 'Red', 4], [[312, 617], 'Red', 5],
+         [[175, 800], 'Red', 6], [[363, 907], 'Red', 7], [[376, 1042], 'Red', 8], [[120, 1164], 'Red', 9], [[343, 1231], 'Red', 10],[[68, 1379], 'Red', 11]]
+
+wall4_height = 1453
+
+start_left_id = 6; start_right_id = 6
+end_id = 0
+right_foot_id = 10; left_foot_id = 11
+
+# Hold class
 class Hold:
-    def __init__(self,x,y,id):
+    def __init__(self, x, y, id):
         self.x = x
         self.y = y
         self.id = id
-        self.neighbors = []
         self.colour = RED
-        self.close = []
-        self.twohands = False
-        self.foot_holds = []
-        
+
     def get_position(self):
         return self.x, self.y
 
@@ -146,10 +128,10 @@ class Hold:
 
     def is_start(self):
         return self.colour == GREEN
-    
+
     def is_end(self):
         return self.colour == BLUE
-    
+
     def make_start(self):
         self.colour = GREEN
 
@@ -158,452 +140,103 @@ class Hold:
 
     def make_end(self):
         self.colour = BLUE
-        
-    def make_neighbor_col(self):
-        self.colour = TURQUOISE
-        
-    def update_parent(self, theparent):
-        self.parent = theparent
-    
-    #Method to draw hold
+
+    # Method to draw hold
     def draw(self, window, scale):
-        pygame.draw.circle(window, self.colour,(self.x*scale, self.y*scale), 5)
-    
-    def draw_edge(self, window, p):
-        pygame.draw.line(window, ORANGE, (self.x, self.y), p.get_posistion())
-    
-    def update_neighbors(self, holdsList, height):
-        self.neighbors = []
-        for hold in holdsList:
-            if hold != self:
-                x,y = hold.get_position()
-                dist = g(hold, self)
-                max = height*0.44 + 0.6096
-                # print("max ", max)
-                # print("dist ", dist)
-                if dist < max:
-                    self.neighbors.append(hold)
-                    # hold.make_neighbor_col()
-                # if abs(self.x - x) < 1 and abs(self.y - y) < 2 and (y - self.y) < 0:
-                #     self.neighbors.append(hold)
-                    #hold.make_neighbour()
-    
-    def update_feet(self, holdsList):
-        self.foot_holds = []
-        for hold in holdsList:
-            if hold != self:
-                x,y = hold.get_position()
-                if y > self. y and abs(self.y - y) < 350 and abs(self.y - y) > 150: # abs(self.x - x) < 125 and abs(self.y - y) < 125 and (y - self.y) < 0:
-                    self.foot_holds.append(hold)
-#                    hold.make_neighbor()
-    
-    def is_close(self,holdsList):
-        # for path1 x = 25 y = 35
-        # for path2
-        self.close = []
-        for hold in holdsList:
-            if hold != self:   
-                x,y = hold.get_posistion()
-                if abs(self.x - x) <= 25 and abs(self.y - y) <= 35:
-                    self.close.append(hold)
-                    hold.make_neighbour()
-        
+        pygame.draw.circle(window, self.colour, (self.x * scale, self.y * scale), 5)
+
     def __lt__(self, other):
         return False
-    
-    
-class Path:
-    
-    def __init__(self, start):
-        self.holds = [start]
 
-#####################################################################################################################
-############################################ Functions for Beta Buddy #############################################
-#####################################################################################################################
-
-# Takes a list of corridantes and makes them into hold objects
-def make_holds(hold_coords,hold_id):
-    hold_list = []
-    for i in range(len(hold_coords)):
-        newHold = Hold(hold_coords[i][0],hold_coords[i][1],hold_id[i])
-        hold_list.append(newHold)
-    return hold_list
-
+## Functions for testing purposes
 # Draws a list of hold objects onto the screen
-def drawHolds(window,holdlist, height):
-    #window.fill(WHITE)
-    scale = height/8
+def drawHolds(window, holdlist, height):
+    # window.fill(WHITE)
+    scale = height / wall_height
     for hold in holdlist:
         hold.draw(window, scale)
     pygame.display.update()
 
-def drawPath(window, path,colour,scale):
-    #window.fill(WHITE)
-    path = list(path.values())
-    for i in range(len(path)-1):
-        pygame.draw.line(window, colour, (path[i].get_position()[0]*scale,path[i].get_position()[1]*scale),
-                         (path[i+1].get_position()[0]*scale,path[i+1].get_position()[1]*scale), 5)
+# Draws a single path on screen
+def drawPath(window, path, colour, scale):
+    # window.fill(WHITE)
+    # path = list(path.values())
+    for i in range(len(path) - 1):
+        pygame.draw.line(window, colour, (path[i].get_position()[0] * scale, path[i].get_position()[1] * scale),
+                         (path[i + 1].get_position()[0] * scale, path[i + 1].get_position()[1] * scale), 5)
     pygame.display.update()
 
-def printFont(window,font,text,x,y):
-    text = font.render(text, False, BLACK, WHITE) #No clue what False/True does
-    window.blit(text,(x,y))
-
-def printHoldNumber(window,path,font):
-    key_list = list(path)
-    value_list = list(path.values())
-
-    for i in range(len(value_list)):
-        x,y = value_list[i].get_position()
-        text = str(key_list[i])
-        printFont(window,font,text,x,y)
-        
-def update_neighbours(classHoldsList,height):
-    for i in classHoldsList:
-        i.update_neighbors(classHoldsList, height)
-        i.update_feet(classHoldsList)
-
-def draw_paths(colours,paths,screen,scale):
-    for j, path in enumerate(paths):
-            col = colours[j]
-            drawPath(screen,path,col,scale)
-            
-# Hurestic function (Are we getting closer to the goal?)
-def heuristic(p1, p2):  #p1, p2 are cooridantes ie (x,y)
-	x1, y1 = p1.get_position()
-	x2, y2 = p2.get_position()
-	return abs(x1 - x2) + abs(y1 - y2) # Manhatten distance
-
-def g(p1, p2):  #p1, p2 are cooridantes ie (x,y)
-	x1, y1 = p1.get_position()
-	x2, y2 = p2.get_position()
-	return math.sqrt((x1 - x2)**2 + (y1 - y2)**2) # Eculidan Distance
-
-def find_paths(start_left, start_right, end, holdList):
-    
-
-    left_path = {1: start_left}
-    right_path = {1: start_right}
-    
-    #Define list of all paths
-    paths = [left_path, right_path]
-    
-    last_hold_in_path = start_left
-    count = 1
-    while last_hold_in_path != end:
-        lowest_score = 100000000
-        path_index = -1
-        best_next_hold = None
-
-        for i, path in enumerate(paths):
-                
-            last_hold = list(path.values())[-1]
-
-            
-            for pos_hold in last_hold.neighbors:
-
-                is_good = True
-
-                #Determine if this hold can still be held by a hand
-                for path_x in paths:
-                    if path_x != path:
-                        last_x_hold = list(path_x.values())[-1]
-                      
-                        if last_x_hold == pos_hold:
-                            if not last_x_hold.twohands:
-                                is_good = False
-                                
-                        if g(last_x_hold, pos_hold) > 100:
-                            is_good = False
-
-                if is_good:
-#                    print("FOUND A GOOD HOLD")
-                    score = g(last_hold, pos_hold) + heuristic(end, pos_hold)
-                    
-                    if score < lowest_score:
-                        lowest_score = score
-                        
-                        path_index = i
-                        best_next_hold = pos_hold
-
-        count = count + 1
-        currentPath = paths[path_index]
-        currentPath[count] = best_next_hold
-        last_hold_in_path = best_next_hold
-    
-    # Check to add last hold to missing path
-    if list(paths[0].values())[-1] != end:
-        count = count + 1
-        currentPath = paths[0]
-        currentPath[count] = end
-    
-    if list(paths[1].values())[-1] != end:
-        count = count + 1
-        currentPath = paths[1]
-        currentPath[count] = end        
-    
-    return left_path, right_path
-
-def get_left_right_feet(feet):
-    
-    if feet[0].x < feet[1].x:
-        left = feet[0]
-        right = feet[1]
-    else:
-        left = feet[1]
-        right = feet[0]
-        
-    return left, right
-
-def max_dist_feet(pos_feet):
-    max_dist = -1
-    foot_list = []
-    
-    for i in pos_feet:
-        for j in pos_feet:
-            x1,y1 = i.get_position()
-            x2,y2 = j.get_position()
-            
-            dist = abs(x1-x2)
-            
-            if dist > max_dist:
-                max_dist = dist
-                hold1 = i
-                hold2 = j
-    
-    foot_list = [hold1,hold2]
-    
-    return foot_list
-
-def get_feet(hand_paths, start_foot_left, start_foot_right):
-    
-    left_foot_path = {1: start_foot_left}
-    right_foot_path = {1: start_foot_right}
-    
-    count = 2
-    
-    # make copy of left  hand path
-    all_hands = hand_paths[0].copy()
-    
-    # Merge left and right hands
-    all_hands.update(hand_paths[1])
-    
-    # Loop through all hands after start hold
-    for i in range(2,len(all_hands)+1):
-        # Get currnt hand
-        current_hand = all_hands[i]
-        
-        # Get possible feet and current feet to determine if they should move
-        pos_feet = current_hand.foot_holds
-        current_left_foot = list(left_foot_path.values())[-1]
-        current_right_foot = list(right_foot_path.values())[-1]
-        
-        # If current foot is not in possible feet foot needs to move
-        is_left = not(current_left_foot in pos_feet)
-        is_right = not(current_right_foot in pos_feet)
-        
-        # If both left and right are not in pos_feet
-        if is_left and is_right:
-            # If left and right are not in pos feet
-            if len(pos_feet) == 2: # If only two feet options put left to left and right ti right
-                left, right = get_left_right_feet(pos_feet)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1 
-                
-            else:
-                # Find max x disatnce between possible feet for best stability
-                two_foots = max_dist_feet(pos_feet)
-                
-                # Pick left and right
-                left, right = get_left_right_feet(two_foots)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1
-        
-        elif is_left:
-            pos_feet.remove(current_right_foot)
-            
-            if len(pos_feet) == 2: # If only two feet options put left to left and right ti right
-                left, right = get_left_right_feet(pos_feet)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1
-                
-            else:
-                # Find max x disatnce between possible feet for best stability
-                two_foots = max_dist_feet(pos_feet)
-                
-                # Pick left and right
-                left, right = get_left_right_feet(two_foots)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1
-        
-        elif is_right:
-            pos_feet.remove(current_left_foot)
-            if len(pos_feet) == 2: # If only two feet options put left to left and right ti right
-                left, right = get_left_right_feet(pos_feet)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1
-                
-            else:
-                # Find max x disatnce between possible feet for best stability
-                two_foots = max_dist_feet(pos_feet)
-                
-                # Pick left and right
-                left, right = get_left_right_feet(two_foots)
-                left_foot_path[count] = left
-                right_foot_path[count] = right
-                count +=1
-        
-    return left_foot_path, right_foot_path
-
-def scale_coords(cords_m,h):
-    ratio = h/8
-    cords = cords_m.copy()
-    for i in cords:
-        i[0] = i[0]*ratio
-        i[1] = i[1]*ratio
-
-    return cords, ratio
-
+# Set hold colour to start
 def set_start(start):
     start.make_start()
 
+# Set hold color to end
 def set_end(end):
     end.make_end()
 
-def get_holds(cv_list,img_height):
+def screen_setup(width, height):
+    screen = pygame.display.set_mode((width, height))
+    pygame.display.set_caption('Simple Path')
+    screen.fill(WHITE)
+    pygame.display.flip()
+    return screen
+
+def draw_stance(stance, height, window):
+    scale = height / wall_height
+    hand_left = stance[0];foot_left = stance[2];hand_right = stance[1];foot_right = stance[3]
+
+    pygame.draw.circle(window, TURQUOISE, (hand_left.get_position()[0] * scale, hand_left.get_position()[1] * scale), 10)
+    pygame.draw.circle(window, ORANGE, (hand_right.get_position()[0] * scale, hand_right.get_position()[1] * scale), 10)
+    pygame.draw.circle(window, PURPLE, (foot_left.get_position()[0] * scale, foot_left.get_position()[1] * scale), 10)
+    pygame.draw.circle(window, GREY, (foot_right.get_position()[0] * scale, foot_right.get_position()[1] * scale), 10)
+    pygame.display.update()
+
+######## Fuctions for beta function
+# Takes a list of corridantes and makes them into hold objects
+def make_holds(hold_coords, hold_id):
+    hold_list = []
+    for i in range(len(hold_coords)):
+        newHold = Hold(hold_coords[i][0], hold_coords[i][1], hold_id[i])
+        hold_list.append(newHold)
+    return hold_list
+
+# Hurestic function (Are we getting closer to the goal?)
+def heuristic(p1, p2):  # p1, p2 are cooridantes ie (x,y)
+    x1, y1 = p1.get_position()
+    x2, y2 = p2.get_position()
+    return abs(x1 - x2) + abs(y1 - y2)  # Manhatten distance
+
+def g(p1, p2):  # p1, p2 are holds
+    x1, y1 = p1.get_position()
+    x2, y2 = p2.get_position()
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)  # Eculidan Distance
+
+# Take cv Output and make a list of Hold objects
+def get_holds(cv_list, img_height, wall_h):
     coords = []
     id = []
-
     # Get coords and id seprate
     for i in cv_list:
         coords.append(i[0])
         id.append(i[2])
 
     # Scale coords
-    scale = img_height/6
+    scale = img_height / wall_h
     for i in coords:
-        i[0] = i[0]/scale
-        i[1] = i[1]/scale
+        i[0] = i[0] / scale
+        i[1] = i[1] / scale
 
-    print(coords)
-    classHoldsList = make_holds(coords,id)
+    classHoldsList = make_holds(coords, id)
     return classHoldsList
 
-def screen_setup(width,height):
-    screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption('Simple Path')
-    screen.fill(WHITE)
-    pygame.display.flip()
-
-    return screen
-##############################################################################    
-####################### Main to test Beta Stuff ##############################
-##############################################################################
-# def main():
-#     path = r"C:\Users\paule\PycharmProjects\Capstone\Wall Factors\testWalls\Wall9.JPEG"
-#     testImg = cv2.imread(path)
-#     coords = U.photoToCoords(testImg)
-#     print(coords)
-#     scaled = scale_coords(coords, 780, 400)
-#     print(scaled)
-#
-#     # Screen Setup
-#     (width, height) = (400, 780)
-#     screen = pygame.display.set_mode((width, height))
-#     pygame.display.set_caption('Simple Path')
-#     screen.fill(WHITE)
-#     pygame.display.flip()
-#
-#     # Take hold cooridantes and make them into Hold Class objects
-#    ############# Can change holds list used in this line #################
-#     # classHoldsList = make_holds(holdsList1)
-#
-#    # Set start and end holds
-#     start = classHoldsList[3]
-#     start.make_start()
-#
-#     left_foot = classHoldsList[0]
-#     right_foot = classHoldsList[1]
-#
-#     # print(start.get_position())
-#     # print(classHoldsList[2].get_position())
-#     # print(left_foot.get_position())
-#     # print(right_foot.get_position())
-#
-#     classHoldsList[13].update_feet(classHoldsList)
-#
-#     classHoldsList[8].twohands = True
-#
-#     end = classHoldsList[-1]
-#     end.make_end()
-#
-#     # Get neighbours for each hold
-#     update_neighbours_feet(classHoldsList)
-#
-#     # Find paths
-#     hand_paths, foot_paths = find_paths(start, start, left_foot, right_foot, end, classHoldsList)
-#     # print(paths)
-#     # print(list(hand_paths[0]))
-#     # print(list(hand_paths[1]))
-#
-#     left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
-#
-#     # print(left_feet)
-#     # print(right_feet)
-#
-#     feet_paths = [left_feet,right_feet]
-#
-#     pygame.init() # intilize font
-#     font=pygame.font.SysFont('helvetica',20) #define the font and size
-#
-# #    printHoldNumber(screen,hand_paths[0],font)
-# #    printHoldNumber(screen,hand_paths[1],font)
-#
-#     printHoldNumber(screen,feet_paths[0],font)
-#     printHoldNumber(screen,feet_paths[1],font)
-#
-# #    for i in paths[1].holds:
-# #        i.make_neighbor()
-#
-#    # Use a loop so the window stays open
-#    # But this means that pygame is always redrawing
-#     running = True
-#     while running:
-#        # If the X button is clicked quit pygame screen
-#        for event in pygame.event.get():
-#            if event.type == pygame.QUIT:
-#                running = False
-#
-#        # Draw holds on screen
-#        drawHolds(screen,classHoldsList)
-#
-#        #Draw Paths
-#        colours = [PURPLE, GREY]
-# #        draw_paths(colours,hand_paths,screen)
-#        draw_paths(colours,feet_paths,screen)
-#
-#
-#     pygame.quit()
-
-def do_beta(cv_coords_list,start_left_id,start_right_id,end_id,left_foot_id, right_foot_id, img_height):
-    # make image into list of hold objects
-    classHoldsList = get_holds(cv_coords_list, img_height)
-    height = 1.6825
-    # classHoldsList[9].make_orange()
-    # classHoldsList[9].update_neighbors(classHoldsList, height)
-
-    # Set start and end for feet and hands
+# Given a list of ids return the start stance and end hold
+def get_startstance_end(classHoldsList, start_left_id, start_right_id, end_id, left_foot_id, right_foot_id):
     for i in classHoldsList:
-        if i.get_id() == start_right_id:
-            start_right = i
-            set_start(i)
         if i.get_id() == start_left_id:
             start_left = i
+            set_start(i)
+        if i.get_id() == start_right_id:
+            start_right = i
             set_start(i)
         if i.get_id() == end_id:
             end = i
@@ -615,91 +248,252 @@ def do_beta(cv_coords_list,start_left_id,start_right_id,end_id,left_foot_id, rig
             right_foot = i
             set_start(i)
 
-    # Get neighbours for each hold
-    update_neighbours(classHoldsList,height)
+    start_stance = [start_left, start_right,left_foot,right_foot ]
+    return start_stance, end
 
-    # Find hand and foot paths
-    hand_left,hand_right = find_paths(start_left, start_right, end, classHoldsList)
-    # foot_left, foot_right = get_feet([hand_left,hand_right], left_foot, right_foot)
+# Find all stances that have 3 holds in common with one another
+def match_stances(current_stance,stance_list):
+    # Find stances with max number of same hold posistions
+    stance_matches = []
+    for i, stance in enumerate(stance_list):
+        count = 0
+        for j in range(4):
+            if current_stance[j] == stance[j]:
+                count += 1
+        if count == 3:
+            stance_matches.append(stance)
 
-    # hand_left = {}
-    # hand_right = {}
-    foot_left = {}
-    foot_right = {}
+    return stance_matches
 
-    return hand_right,hand_left,foot_right,foot_left,classHoldsList
+# Get index of hold different bt two stances
+def get_diff_index(stance1,stance2):
+    for i in range(4):
+        if stance1[i] != stance2[i]:
+            return i
+
+# Get cost of moving to next stance
+def stance_cost(current_stance, next_stance,end, beta_list,person_h):
+    cost = 0
+    if len(beta_list)>2:
+        if next_stance == beta_list[-2]:
+            cost += 10000000
+
+    if len(beta_list)>3:
+        if next_stance == beta_list[-3]:
+            cost += 10000000
+
+    #get index of segment moved
+    index_moved = get_diff_index(current_stance,next_stance)
+
+    # make body for this stance
+    body = B.Body(current_stance[0].get_position(),current_stance[1].get_position(),current_stance[2].get_position(),current_stance[3].get_position(), person_h)
+
+    is_balance = body.offBalance()
+    if is_balance:
+        cost += 10000000
+
+    next_hold = next_stance[index_moved]
+    current_hold = current_stance[index_moved]
+
+    x1, y1 = next_hold.get_position()
+    x2, y2 = current_hold.get_position()
+
+    if y1 < y2:
+        upwards = 0
+    else:
+        upwards = 10000000
+
+    cost += g(current_stance[index_moved], next_stance[index_moved]) + heuristic(next_stance[index_moved],end) + upwards
+    return cost
+
+# Find all feasibale 4 combintaion of holds in problem
+def stable_stances(hold_list,start_left_id, start_right_id,person_height):
+    # This function is to retun all combination of possible 4 points of contant
+    # for a stance to be stable it must be in region of "reachability"
+    # min and max distance between hands and foot
+    # left hand/foot must be to left of right and right to right of left
+    # make combintaions of all possible 4 combinations of holds
+
+    # left hand, right hand, left foot, right foot
+    allcombo_hold = list(itertools.combinations(hold_list, 4))
+    for i, current in enumerate(allcombo_hold):
+        allcombo_hold[i] = list(current)
+
+    # max_foothand_dist = 0.5 + segL_height['upperExtremity']*body_height + segL_height['lowerExtremity']*body_height + segL_height['trunk']*body_height
+    # max_foothand_dist = 2.5; min_foothand_dist = 0.5
+    max_foothand_dist = person_height*1.2;
+    min_foothand_dist = 0.5
+
+    # print("Len1 all combo: ", len(allcombo_hold))
+
+    # get start left and right y value
+    for i in hold_list:
+        if i.get_id() == start_left_id:
+            start_left_y = i.get_position()[1]
+        if i.get_id() == start_right_id:
+            start_right_y = i.get_position()[1]
+
+    # Switch hands and feet if they are not to the left/right
+    for i,current in enumerate(allcombo_hold):
+        hand_left = current[0]; hand_right = current[1]
+        foot_left = current[2]; foot_right = current[3]
+
+        lh_x = hand_left.get_position()[0]; rh_x = hand_right.get_position()[0]
+        ll_x = foot_left.get_position()[0]; rl_x = foot_right.get_position()[0]
+
+        if lh_x > rh_x:
+            allcombo_hold[i][0] = hand_right
+            allcombo_hold[i][1] = hand_left
+
+        if ll_x > rl_x:
+            allcombo_hold[i][2] = foot_right
+            allcombo_hold[i][3] = foot_left
+
+    # First filter is to take out posistions too close and too far away
+    filter1 = []
+    filter2 = []
+    for i, current in enumerate(allcombo_hold):
+        hand_left = current[0]; foot_left = current[2]; hand_right = current[1];foot_right = current[3]
+        dist1 = g(hand_left, foot_left);dist2 = g(hand_right, foot_right);dist3 = g(hand_left, foot_right);dist4 = g(hand_right, foot_left)
+
+        if (dist1>min_foothand_dist) and (dist2>min_foothand_dist) and (dist3>min_foothand_dist) and (dist4>min_foothand_dist):
+            filter1.append(list(current))
+            if (dist1<max_foothand_dist) and (dist2<max_foothand_dist) and (dist3<max_foothand_dist) and (dist4<max_foothand_dist):
+                filter2.append(list(current))
+
+    # print("Len3: ", len(filter1))
+    # print("Len4: ", len(filter2))
+
+    stable_stances = filter2
+    return stable_stances
+
+# Find string of stances that make beta
+def beta_stances(start_stance, stance_list,end,person_h):
+    current_stance = start_stance
+
+    beta_stance_list = [start_stance]
+
+    # Want to minmize cost
+    # Cost = manhatten diatnce + eculdian distance
+    counter = 0
+    run = True
+    # while (current_stance[0] != end or current_stance[1] != end) or counter < 20:
+    # while counter < 19:
+    while run:
+        print()
+        print("count: ",counter)
+
+        if counter>30:
+            error_statemnt = "Error Beta not found"
+            break
+            return error_statemnt
+
+        lowest_score = 1000000000
+        next_stance = None
+        next_pos_stances = match_stances(current_stance, stance_list)
+        print("len next stnaces: ",len(next_pos_stances))
+
+        for int, i in enumerate(next_pos_stances):
+            if i != current_stance:
+                current_score = stance_cost(current_stance, i, end, beta_stance_list,person_h)
+                print(int, ": ", current_score)
+                if current_score < lowest_score:
+                    lowest_score = current_score
+                    next_stance = i
+
+        current_stance = next_stance
+        beta_stance_list.append(next_stance)
+
+        run = ((next_stance[0] != end) and (next_stance[1] != end))
+        counter += 1
+
+    return beta_stance_list
+
+def sort_beta(beta_stances, end_id):
+    # print("look here: ", beta_stances[0][0].get_id())
+    # id = int(beta_stances[0][0].get_id())
+    # print(int(id))
+
+    left_hand = {1: beta_stances[0][0].get_id()}
+    right_hand = {1: beta_stances[0][1].get_id()}
+    left_foot = {1: beta_stances[0][2].get_id()}
+    right_foot = {1: beta_stances[0][3].get_id()}
+
+    last_stance = beta_stances[0]
+
+    counter = 2
+    for i in range(1,len(beta_stances)):
+        index = get_diff_index(last_stance,beta_stances[i])
+        if index == 0:
+            left_hand[counter] = beta_stances[i][0].get_id()
+        if index == 1:
+            right_hand[counter] = beta_stances[i][1].get_id()
+        if index == 2:
+            left_foot[counter] = beta_stances[i][2].get_id()
+        if index == 3:
+            right_foot[counter] = beta_stances[i][3].get_id()
+
+        counter += 1
+        last_stance = beta_stances[i]
+
+    if list(left_hand.values())[-1] != end_id:
+        left_hand[counter] = end_id
+
+    if list(right_hand.values())[-1] != end_id:
+        right_hand[counter] = end_id
+
+    return left_hand, right_hand, left_foot, right_foot
+
+
+# Take climber height and wall height
+def beta(cv_route,image_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_h, wall_h):
+    hold_objects = get_holds(cv_route, image_height,wall_h)
+    start_stance, end_hold = get_startstance_end(hold_objects,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id)
+    all_stances = stable_stances(hold_objects, start_left_id, start_right_id, climber_h)
+    beta_stance_list = beta_stances(start_stance, all_stances, end_hold,climber_h)
+    final = sort_beta(beta_stance_list,end_id)
+
+    return final, beta_stance_list, hold_objects, all_stances
 
 def main():
-    # choose image
+    print("Hello World")
+    # Only line needed to get beta output for app
+    for_alex, beta_stances_list, holds, stances = beta(wall4,wall4_height,start_left_id, start_right_id, end_id, left_foot_id, right_foot_id, climber_height, wall_height)
+    print(beta_stances_list[0][0].get_id())
 
-    coords_list_1 = [[[334,53],'Green',3],[[383,125],'Green',4],[[333,165],'Green',6],[[269,273],'Green',9],
-                     [[304,336],'Green',11],[[264,386],'Green',13],[[187,504],'Green',19],[[219,561],'Green',21],
-                     [[333,626],'Green',23],[[129,712],'Green',25],[[295,781],'Green',27],[[130,932],'Green',31],
-                     [[212,1055],'Green',33]]
-
-    img_height1 = 1111
-
-    start_left_id = 25
-    start_right_id = 25
-    end_id = 3
-    right_foot_id = 33
-    left_foot_id = 31
-
-    hand_right,hand_left,foot_right,foot_left,classHoldsList = \
-        do_beta(coords_list_1,start_left_id,start_right_id,end_id,left_foot_id,right_foot_id,img_height1)
-
-    # Screen Setup
-    (width, height) = (300, 780)
-    screen = screen_setup(width,height)
+    ### Draw suff for testing
+    # Set up screen
+    (width, height) = (400, 780)
+    screen = screen_setup(width, height)
 
     # Draw holds
-    drawHolds(screen, classHoldsList, height)
+    drawHolds(screen, holds, height)
 
-    print(hand_right)
-    print(hand_left)
-    hand_paths = [hand_right,hand_left]
-    scale = 780/8
-    # Draw Paths
-    colours = [PURPLE, GREY]
-    draw_paths(colours, hand_paths, screen, scale)
-    # draw_paths(colours,feet_paths,screen)
     running = True
+    i = 0
     while running:
         # If the X button is clicked quit pygame screen
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    screen.fill(WHITE)
+                    drawHolds(screen, holds, height)
+                    i += 1
+
+                if event.key == pygame.K_BACKSPACE:
+                    screen.fill(WHITE)
+                    drawHolds(screen, holds, height)
+                    i -= 1
+
+        if i > len(beta_stances_list) - 1:
+            i = 0
+
+        draw_stance(beta_stances_list[i], height, screen)
+        # body = B.Body(beta_stances_list[i][0].get_position(),beta_stances_list[i][1].get_position(),beta_stances_list[i][2].get_position(),beta_stances_list[i][3].get_position(),person_height)
+        # body.drawBody()
     pygame.quit()
-    ################################################
-    # Get neighbours for each hold
-    # update_neighbours(classHoldsList)
-
-    # classHoldsList[8].twohands = True
-
-   #
-   #  left_foot = classHoldsList[0]
-   #  right_foot = classHoldsList[1]
-   #
-   #  classHoldsList[13].update_feet(classHoldsList)
-   #
-   #  classHoldsList[8].twohands = True
-
-    # Find paths
-    # hand_paths = find_paths(start, start, end, classHoldsList)
-   #
-   #  left_feet, right_feet = get_feet(hand_paths, left_foot, right_foot)
-   #
-   #  feet_paths = [left_feet,right_feet]
-   #
-   #  pygame.init() # intilize font
-   #  font=pygame.font.SysFont('helvetica',20) #define the font and size
-   #
-   #  printHoldNumber(screen,feet_paths[0],font)
-   #  printHoldNumber(screen,feet_paths[1],font)
-
-   # Use a loop so the window stays open
-   # But this means that pygame is always redrawing
-
 
 main()

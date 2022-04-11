@@ -99,9 +99,11 @@ class HoldsScreen(Screen):
     def on_enter(self):
         #Get background image as selected from gallery screen
         image = self.manager.get_screen("gallery_screen").ids.my_image.source
+        
 
         #CV Wall with image input
         cvWall = cv.inputImageFile(image)
+        print(cvWall.shape)
 
         #Output from Dom's Function
         self.holdList = domCV.CV(image)[1]
@@ -133,8 +135,8 @@ class HoldsScreen(Screen):
 
     #Convert coordinates into app system
     def extractCoords(self, routes, cvWall):
-        
-        
+        imgRatio = self.manager.get_screen("gallery_screen").ids.my_image.image_ratio
+
         #Loop through keys and convert coordinates into app system
         for colour in routes:
             coordList = []
@@ -145,16 +147,17 @@ class HoldsScreen(Screen):
                 coordList.append(holdInfo[0])
             print(coordList)
             #Convert coordinates to app system
-            appCoords = cv.cvCoordsToAppCoords(coordList,cvWall,appHeight,appWidth)
+            appCoords = cv.cvCoordsToAppCoords(coordList,cvWall,appHeight,appWidth, imgRatio)
             
             #Replace old coordintes with converted coordinates
             i = 0
             for coords in appCoords:
-                self.appRoutes[colour][i][0] = coords
+                self.appRoutes[colour][i][0] = tuple(coords)
                 i = i + 1
 
     #Draw points on the holds screen
     def draw_points(self, holds):
+        self.clear_canvas()
         with self.canvas:
             for hold in holds:
                 Color(1.0, 0.0, 0.0)
@@ -181,7 +184,7 @@ class HoldsScreen(Screen):
             dist = self.distance(p1, hold[0])
             if (dist <= threshold) and (dist <= min_dist):
                 min_dist = dist
-                closest_p = hold
+                closest_p = hold[0]
         return closest_p
 
     #Toggle Delete
@@ -213,12 +216,10 @@ class HoldsScreen(Screen):
 
     #Remove holds of all other colours
     def isolateColour(self, colour):
-        #Go through list of holds
-        #holdList is the data Dom outputs [[(x,y), "colour", holdID], ... ]
-        for holdInfo in self.holds:
-            #If hold colour is not the selected, remove it
-            if colour != holdInfo[1]:
-                self.removeHold(holdInfo[0])
+        self.clear_canvas()
+        self.holds = self.appRoutes[colour]
+        print(self.holds)
+        self.draw_points(self.holds)
         
         self.selectFlag = False
         self.manager.get_screen("holds_screen").ids.select_toggle.state = "normal"
@@ -228,18 +229,12 @@ class HoldsScreen(Screen):
         self.canvas.remove(self.holdObj.get(coords))
         del self.holdObj[coords]
 
+        print("Hold Object:", self.holdObj)
+
         #Remove hold from list of holds
         for holdInfo in self.holds:
             if coords == holdInfo[0]:
                 self.holds.remove(holdInfo)
-
-        #Find hold in [(x,y), holdID] list and remove  it
-        i = 0
-        for hold in self.holds:
-            if coords == hold[0]:
-                del self.holds[i]
-                break
-            i = i + 1
 
     #Delete and select route functions
     def on_touch_down(self, touch):
@@ -272,7 +267,7 @@ class HoldsScreen(Screen):
             #holdList is the data Dom output [[(x,y), "colour", holdID], ... ]
             print("Selected: ", select)
             for holdInfo in self.holds:
-                if select[0] == holdInfo[0]:
+                if select == holdInfo[0]:
                     #Store colour of selected hold
                     colour = holdInfo[1]
                     print(colour)
@@ -591,9 +586,12 @@ class StepsScreen(Screen):
             self.stepNum = self.stepNum + 1
         elif n == -1 and self.stepNum > 1:
             self.stepNum = self.stepNum - 1
-
+        
         #Update figure and description for step
-        self.ids.my_image.source = "step" + str(self.stepNum) + ".png"
+        self.ids.my_image.source = "Frame" + str(self.stepNum) + ".png"
+        
+
+
 
         self.moves(self.RHand, self.LHand, self.RFoot, self.LFoot)
 
